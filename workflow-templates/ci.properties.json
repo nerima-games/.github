@@ -1,0 +1,7 @@
+{
+  "name": "nerima-games CI",
+  "description": "pnpm/Node.js CI matching the org standard: typecheck, lint, dependency whitelist, API lock, test, and the coverage gate, with all actions SHA-pinned.",
+  "iconName": "octicon check-circle",
+  "categories": ["Node", "Continuous Integration"],
+  "filePatterns": ["^pnpm-lock\\.yaml$", "^package\\.json$"]
+}

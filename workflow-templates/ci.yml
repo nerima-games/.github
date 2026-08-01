@@ -1,0 +1,99 @@
+name: CI
+
+on:
+  push:
+    branches: [$default-branch]
+  pull_request:
+
+# These are public repositories, so a fork PR runs this workflow. Nothing here
+# needs write access, and an unset block inherits an org default that is not
+# managed in Terraform.
+permissions:
+  contents: read
+
+# Supersede in-flight runs for the same PR; never cancel a push to the default
+# branch.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        # SHA resolved 2026-08-01 via `gh api repos/actions/checkout/git/ref/tags/v6.1.0`.
+        # Re-resolve yourself before bumping; do not copy this value blindly
+        # once it is stale.
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: Setup pnpm
+        # Pinned to a commit, not a mutable tag: this is a third-party action
+        # and a tag can be repointed at new code without any change here.
+        # This is the exact pin already in production in mc-kernel's
+        # .github/workflows/ci.yaml -- copied, not re-derived.
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+
+      - name: Setup Node.js
+        # SHA resolved 2026-08-01 via `gh api repos/actions/setup-node/git/ref/tags/v6.5.0`.
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: "24"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        # --ignore-scripts: pnpm runs postinstall, and a fork PR can edit
+        # package.json and the lockfile consistently and still satisfy
+        # --frozen-lockfile. Nothing here needs a lifecycle script.
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Type check
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      # scripts/check-dependency-whitelist.ts is the org-wide template
+      # (see PACKAGE_STANDARD.md and mc-kernel's README): it enforces the
+      # cross-repo import whitelist, bans transitive-closure imports, bans a
+      # runtime dependency on mc-playground-kit, and bans raw wall-clock
+      # reads (Date.now() / new Date() / performance.now()). Delete this step
+      # only if the repository genuinely declares no @nerima-games/* imports
+      # yet AND has adopted no time-source ban -- check with the current
+      # PACKAGE_STANDARD.md before doing so.
+      - name: Dependency whitelist / time-source ban
+        run: pnpm check:deps
+
+      # The API lock (see API_STANDARD.md). Fails when the committed
+      # api-lock.md no longer matches the package's public surface, so a
+      # change to what consumers can see cannot land without a reviewable
+      # diff. Run `pnpm api:update` to refresh it.
+      #
+      # NOTE: RELEASE_STANDARD.md §4 retired the old rule that used
+      # api-lock.md's age to auto-promote a package from 0.x to 1.0.0 -- that
+      # promotion is now a maintainer judgment call. This step only checks
+      # that the lock file matches current exports; it does not gate
+      # anything about versioning.
+      - name: API lock
+        run: pnpm api:check
+
+      - name: Test
+        run: pnpm test
+
+      # Coverage measurement always runs; whether it actually gates the build
+      # depends on the thresholds configured in vitest.config.ts (see
+      # TEST_STANDARD.md). Keep the numbers in that config, not here, so
+      # `pnpm test:coverage` gates identically on a laptop and in CI.
+      - name: Coverage
+        run: pnpm test:coverage
+
+      - name: Upload coverage report
+        if: always()
+        # SHA resolved 2026-08-01 via `gh api repos/actions/upload-artifact/git/ref/tags/v6.0.0`.
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: coverage
+          path: coverage/
+          retention-days: 7

@@ -1,0 +1,72 @@
+name: 機能要望
+description: まだこのリポジトリにない機能や挙動の提案。
+labels: ["enhancement"]
+body:
+  - type: dropdown
+    id: repository
+    attributes:
+      label: リポジトリ
+      description: どのリポジトリへの提案ですか。
+      options:
+        - mc-audio
+        - mc-compose
+        - mc-dev-meta
+        - mc-kernel
+        - mc-meshing
+        - mc-noise
+        - mc-physics
+        - mc-playground-kit
+        - mc-render
+        - mc-save
+        - mc-sim
+        - mc-worldgen
+        - mx-gameplay
+        - mx-multiplayer
+        - mx-redstone
+        - mx-ui
+        - わからない
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: 解決したい問題
+      description: >-
+        今できないことは何ですか。想定している API ではなく、解決したい状況を
+        説明してください。最終的な設計は最初に思いついた形と違うことがよくあります。
+    validations:
+      required: true
+
+  - type: textarea
+    id: workaround
+    attributes:
+      label: 今の回避策
+      description: 現状の回避策があれば示してください。冗長なだけの回避策は、
+        不可能・不正確な場合より優先度の根拠として弱くなります。
+    validations:
+      required: false
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 想定する形(任意)
+      description: API やふるまいの案があれば。
+      render: typescript
+    validations:
+      required: false
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: このリポジトリの責務に収まりますか
+      description: >-
+        nerima-games の各リポジトリは4層アーキテクチャに沿って責務を分けています
+        ([PACKAGE_STANDARD.md](https://github.com/nerima-games/.github/blob/main/PACKAGE_STANDARD.md)
+        を参照)。他リポジトリの責務に近い提案かもしれません。
+      options:
+        - はい、明確にこのリポジトリの責務
+        - おそらく、ただし別リポジトリの責務かもしれない
+        - わからない
+    validations:
+      required: true

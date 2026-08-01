@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 使い方についての質問
+    url: https://github.com/nerima-games/.github/blob/main/SUPPORT.md
+    about: 専用のフォーラムはありません。SUPPORT.md を読んでから質問 issue を開いてください。
+  - name: セキュリティ上の脆弱性
+    url: https://github.com/nerima-games/.github/blob/main/SECURITY.md
+    about: 公開 issue にしないでください。Private Vulnerability Reporting を使ってください。
+  - name: パッケージ標準
+    url: https://github.com/nerima-games/.github/blob/main/PACKAGE_STANDARD.md
+    about: リポジトリの構成、4層アーキテクチャとその理由。

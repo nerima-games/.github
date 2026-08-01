@@ -1,0 +1,84 @@
+name: バグ報告
+description: ドキュメントと矛盾する挙動、またはクラッシュ。
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        セキュリティ上の問題にはこのフォームを使わないでください。
+        [SECURITY.md](https://github.com/nerima-games/.github/blob/main/SECURITY.md)
+        の手順に従ってください。
+
+  - type: dropdown
+    id: repository
+    attributes:
+      label: リポジトリ
+      description: どのリポジトリでの問題ですか。
+      options:
+        - mc-audio
+        - mc-compose
+        - mc-dev-meta
+        - mc-kernel
+        - mc-meshing
+        - mc-noise
+        - mc-physics
+        - mc-playground-kit
+        - mc-render
+        - mc-save
+        - mc-sim
+        - mc-worldgen
+        - mx-gameplay
+        - mx-multiplayer
+        - mx-redstone
+        - mx-ui
+        - わからない / 複数にまたがる
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: バージョンまたはコミット
+      description: 使用しているリリースタグ、または commit SHA。
+      placeholder: v1.0.0
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Node / pnpm のバージョン
+      description: >-
+        `node --version` と `pnpm --version` の出力。
+        org の標準は Node >=24, pnpm >=11 です(`package.json` の `engines` を参照)。
+      placeholder: "node v24.x.x / pnpm 11.x.x"
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: 再現手順
+      description: >-
+        問題を再現する最小の手順やコード片。`pnpm verify` の失敗結果があれば理想的です。
+        再現手順つきの issue は確認の手間が最も少ないため、最も早く対応できます。
+      render: typescript
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期待していた挙動
+      description: 該当するドキュメントのどこからそう期待したかも書いてください。
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: 実際の挙動
+      description: エラーメッセージやスタックトレースをそのまま貼り付けてください。
+      render: text
+    validations:
+      required: true
