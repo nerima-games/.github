@@ -146,6 +146,18 @@ byte-identical であることは適合の条件ではありません。`check-d
 oxlint がそのルールを実装するまでの間、当該リポジトリの `scripts/` に個別の代替スクリプトを
 置くかどうかを各リポジトリの裁量とします(org 標準としては要求しません)。
 
+## oxlint は `package.json` の devDependency ではなく Nix 提供(2026-08-01 追加)
+
+上記の `no-restricted-imports` 移行作業で、oxlint のバージョンが16リポジトリ間で
+サイレントに分裂していたことが判明しました(一部は `^1.76.0`、一部は `^0.12.0` — 後者には
+`no-restricted-imports` 自体が実装されておらず、ファイル名を直しても機能しません)。
+これを受けて oxlint は **`package.json` の devDependency から削除し、`flake.nix` の
+devShell に `pkgs.oxlint` として一本化**します(nixpkgs は本書執筆時点で 1.75.0 を配布)。
+CI も `.github/actions/nix-setup/`(`templates/actions/nix-setup/` からコピー)経由で
+Nix をインストールしてから `nix develop --command pnpm lint` を実行し、ローカルと CI で
+同じ oxlint バイナリを使う一本化を徹底します。SHA固定とCachixの詳細は
+[SUPPLY_CHAIN.md「追加された信頼済みプロバイダ」](SUPPLY_CHAIN.md#追加された信頼済みプロバイダ-nix--cachix2026-08-01)を参照してください。
+
 ## `package.json` の必須フィールドとスクリプト
 
 `src/` 移行に伴い、以下を書き換えます。`mc-kernel/package.json` (移行前)を例に、

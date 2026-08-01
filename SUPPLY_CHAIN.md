@@ -157,6 +157,24 @@ jobs:
 この3点を全16リポジトリの `ci.yaml`（および `mc-kernel` が持つ `docs.yaml` 相当のワークフローがあれば同様に）へ適用してください。
 `docs.yaml` は該当ブランチのままで問題ありません。パターンを ``ci.yaml`` 側へ持ってくることが目的です。
 
+### 追加された信頼済みプロバイダ: Nix / Cachix(2026-08-01)
+
+oxlint を Nix devShell 経由に切り替えたこと(PACKAGE_STANDARD.md)により、CI に2つの新しいサードパーティ
+アクションが加わりました。両方とも commit SHA 固定です。
+
+```yaml
+- uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
+- uses: cachix/cachix-action@5f2d7c5294214f71b873db4b969586b980625e71 # v17
+```
+
+いずれも `.github/actions/nix-setup/`(`templates/actions/nix-setup/` からコピーした composite action)の中でのみ使う。
+`CACHIX_AUTH_TOKEN` は fork PR(`pull_request` イベント)では push できない設定になっており
+(`nix-setup/action.yml` の `Resolve Cachix mode` ステップ参照)、これは `nerima-lisp/.github` の同名アクションと
+同じ安全策です。キャッシュは16リポジトリ共有の単一キャッシュ `takeokunn-nerima-games`
+(`takeokunn/private-terraform` の `projects/cachix/caches.tf` で作成、`projects/github/repos_nerima_games.tf` で
+各リポジトリへ `CACHIX_CACHE` 変数として配線済み)。nerima-lisp のリポジトリ単位キャッシュとは異なる設計判断で、
+理由は16リポジトリの devShell が(リポジトリ固有のビルド成果物を持たず)ほぼ同一内容だから。
+
 ## Dependabot
 
 **現状、org のどのリポジトリにも `dependabot.yml` がありません。** `find` を全16リポジトリに対して実行し確認済みです。
