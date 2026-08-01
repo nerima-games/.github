@@ -16,10 +16,10 @@ mc-physics, mc-playground-kit, mc-render, mc-save, mc-sim, mc-worldgen, mx-gamep
 
 | 分類 | 規約 | 根拠 |
 |---|---|---|
-| Lint | oxlint のみ。prettier / biome / .editorconfig を置かない | `mc-kernel/oxlint.json:3-4` |
+| Lint | oxlint のみ。prettier / biome / .editorconfig を置かない | `mc-kernel/.oxlintrc.json:3-4` |
 | Lint 設定の共有 | 全リポジトリで同一。今後 `no-restricted-imports` のみリポジトリ固有に分岐する | 本文書 §1 |
 | 型 | `strict: true` に加え全 strictness フラグを明示 | `mc-kernel/tsconfig.base.json:23-41` |
-| 型定義 | データ型は `interface` でなく `type` | `mc-kernel/oxlint.json:36` |
+| 型定義 | データ型は `interface` でなく `type` | `mc-kernel/.oxlintrc.json:36` |
 | コミット | Conventional Commits（`feat:` `fix:` `chore:` `test:` 等、任意でスコープ） | 本文書 §2（`mc-kernel` `mx-ui` の直近30件） |
 | ディレクトリ | `domain/` は純粋型・純粋関数のみ、I/O・Effect サービス禁止 | `mc-sim/docs/responsibility.md`、`mc-kernel/docs/architecture.md:13,192` |
 | ディレクトリ | `application/`（条件付き。PACKAGE_STANDARD.md 参照）は Effect サービスが Port を消費する層 | 本文書 §3 |
@@ -31,7 +31,7 @@ mc-physics, mc-playground-kit, mc-render, mc-save, mc-sim, mc-worldgen, mx-gamep
 
 ### oxlint が唯一の lint/format 設定
 
-`mc-kernel/oxlint.json:3-4` のコメントに明記されている通りです。
+`mc-kernel/.oxlintrc.json:3-4` のコメントに明記されている通りです。
 
 > oxlint is the ONLY lint/format configuration in this repository.
 > There is deliberately no prettier, no biome and no .editorconfig.
@@ -39,7 +39,7 @@ mc-physics, mc-playground-kit, mc-render, mc-save, mc-sim, mc-worldgen, mx-gamep
 理由も同ファイルに書かれています。prettier や biome を並走させると二重の整形基盤を保守することになるため、
 oxlint 単独に統一しています。
 
-### 実際に有効なルール（`mc-kernel/oxlint.json` を実読して確認）
+### 実際に有効なルール（`mc-kernel/.oxlintrc.json` を実読して確認）
 
 `categories` はすべて `"warn"`（`correctness` `suspicious` `perf` `style` `restriction`、:25-29）で、
 個別の `rules` がそれを上書きします。実際に読んで確認した主なルールは次の通りです。
@@ -61,13 +61,13 @@ TypeScript 固有（:36-45）:
 - `no-case-declarations": "off"`, `no-constant-condition": "off"`, `no-param-reassign": "off"`, `no-plusplus": "off"`
 
 Restriction 節にある `no-restricted-imports`（:119-126）は現状すべてのリポジトリで同一内容（`effect` の default
-import 禁止）ですが、この規約はここで止まりません。**この移行以降、`oxlint.json` の `no-restricted-imports`
+import 禁止）ですが、この規約はここで止まりません。**この移行以降、`.oxlintrc.json` の `no-restricted-imports`
 節だけがリポジトリごとに分岐します**（詳細は [DEPENDENCY_POLICY.md](DEPENDENCY_POLICY.md) 未執筆）。
 それ以外の節（TypeScript / Correctness / Suspicious / Performance / Style の各ルール）は共有のまま変更しません。
 
 ### 実装されていないルールをコメントで記録する
 
-`mc-kernel/oxlint.json:6-13` に、`Date.now()` の禁止を `no-restricted-syntax` / `no-restricted-properties` /
+`mc-kernel/.oxlintrc.json:6-13` に、`Date.now()` の禁止を `no-restricted-syntax` / `no-restricted-properties` /
 `no-restricted-globals` で表現しようとした結果が記録されています。
 
 > oxlint 0.12 does not implement `no-restricted-syntax` or `no-restricted-properties`, and while
@@ -80,15 +80,15 @@ lint で表現できないルールを諦めて忘れるのではなく、(1) �
 は inert なまま残されている）、(2) 実際の強制はスクリプト側に置き、(3) その理由をコメントで残す、という型です。
 新しいリポジトリで同種の制約が必要になったら、この3点セットに倣ってください。
 
-### 3リポジトリで oxlint.json を diff した結果
+### 3リポジトリで .oxlintrc.json を diff した結果
 
-`mc-kernel` / `mx-ui` / `mc-audio` の `oxlint.json` を実際に diff しました。
+`mc-kernel` / `mx-ui` / `mc-audio` の `.oxlintrc.json` を実際に diff しました。
 
 - `mc-kernel` と `mx-ui`: 差分なし（完全一致）。
 - `mc-kernel` と `mc-audio`: 差分は2行のみで、`consistent-type-definitions` ルールに付いた
   「`plan.md §4.1` の契約は `interface` のまま」というコメント（mc-kernel 固有の注記）だけ。ルール本体に差はない。
 
-つまり現時点でも `oxlint.json` はほぼ全リポジトリ共通です。上述の通り、今後の変化点は
+つまり現時点でも `.oxlintrc.json` はほぼ全リポジトリ共通です。上述の通り、今後の変化点は
 `no-restricted-imports` 節に限定する方針です。それ以外の節に手を入れる変更は、レビューで
 「なぜこのリポジトリだけ違うのか」を問うべきです。
 
@@ -287,7 +287,7 @@ nerima-lisp の規約と共通です。破壊的変更を示す `!` や `BREAKIN
 
 - **API 設計**（REST/GraphQL のエンドポイント設計、リクエスト/レスポンスの一貫性、OpenAPI）→ [API_STANDARD.md](API_STANDARD.md)（未執筆）
 - **テスト規約**（テストファイル名、カバレッジ基準、テスト基盤の選定）→ [TEST_STANDARD.md](TEST_STANDARD.md)（未執筆）
-- **リポジトリ間依存の許可リスト**、および `oxlint.json` の `no-restricted-imports` 節の具体的な中身
+- **リポジトリ間依存の許可リスト**、および `.oxlintrc.json` の `no-restricted-imports` 節の具体的な中身
   → [DEPENDENCY_POLICY.md](DEPENDENCY_POLICY.md)（未執筆）
 - **パッケージ構造**（`application/` を持つかどうかの判断基準、ディレクトリの外形全般）
   → [PACKAGE_STANDARD.md](PACKAGE_STANDARD.md)（未執筆）

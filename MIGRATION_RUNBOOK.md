@@ -140,7 +140,7 @@
 
 ## 手順3: `check-dependency-whitelist` の廃止 + oxlint ルール追加
 
-**why**: Tier 間の依存許可リストを、カスタムスクリプトではなく `oxlint.json` の
+**why**: Tier 間の依存許可リストを、カスタムスクリプトではなく `.oxlintrc.json` の
 `no-restricted-imports` に一本化するため。詳細は
 [API_STANDARD.md](API_STANDARD.md) 系ではなく `DEPENDENCY_POLICY.md`(未執筆)が扱う。
 Tier 別の禁止パターンの中身はリポジトリごとに違ってよく、byte-identical であることは
@@ -162,8 +162,8 @@ Tier 別の禁止パターンの中身はリポジトリごとに違ってよく
 2. `package.json` の `scripts` から `check:deps` を削除し、`scripts.verify` を
    `"pnpm typecheck && pnpm lint && pnpm test"` に確定させる(手順2と合わせて1回で行ってよい)。
 
-3. `oxlint.json` に `no-restricted-imports` ブロックを追加/拡張する。
-   `mc-kernel/oxlint.json` が既に持つ形(`effect` のデフォルト import 禁止)を土台に、
+3. `.oxlintrc.json` に `no-restricted-imports` ブロックを追加/拡張する。
+   `mc-kernel/.oxlintrc.json` が既に持つ形(`effect` のデフォルト import 禁止)を土台に、
    自リポジトリの Tier が禁止すべき `@nerima-games/*` import パターンを足す
    (許可される親・禁止される兄弟/子は `DEPENDENCY_POLICY.md` を参照。同文書が
    まだ無い場合は各リポジトリの `docs/architecture.md` の依存グラフ節を暫定的な根拠とする)。
@@ -194,7 +194,7 @@ Tier 別の禁止パターンの中身はリポジトリごとに違ってよく
    `check:deps` 削除後の `verify` 定義に `check:mirrors` を残すかどうかは
    `mc-dev-meta` の維持担当者が個別に判断すること。
 
-**verification**: `pnpm verify` が通ること。`oxlint.json` に追加した
+**verification**: `pnpm verify` が通ること。`.oxlintrc.json` に追加した
 `no-restricted-imports` パターンに実際にひっかかるコードを一時的に書いて
 `pnpm lint` が検出することを確認してから削除する(ルールが実際に効いているかの動作確認)。
 
@@ -240,7 +240,7 @@ Tier 別の禁止パターンの中身はリポジトリごとに違ってよく
 2. `pnpm install` を実行し `pnpm-lock.yaml` を更新する。
 
 **verification**: `pnpm install`(lockfile 差分がエントリ追加分のみであること)、続けて
-`pnpm verify`。さらに手順3で追加した `oxlint.json` の `no-restricted-imports` が
+`pnpm verify`。さらに手順3で追加した `.oxlintrc.json` の `no-restricted-imports` が
 今回追加した依存を禁止パターンに含めていないか(誤って自分自身の親を lint で弾いていないか)
 `pnpm lint` で確認する。
 

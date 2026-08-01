@@ -26,10 +26,10 @@ nerima-games org 16 リポジトリ(`mc-audio` `mc-compose` `mc-dev-meta` `mc-ke
 | 依存の向き | Tier N は Tier <N のみに依存可。同一 Tier 内の横の依存、上位 Tier への逆流、循環はすべて禁止 | `mc-worldgen/scripts/check-dependency-whitelist.ts:19-27` |
 | `mc-kernel` | 全リポジトリから暗黙に import 可。どの許可リストにも書かない(書くとエラー) | 同 `:29-32`, `:670-677` |
 | `mc-playground-kit` | 他リポジトリからは `devDependencies` としてのみ参照可。`dependencies` に置くこと・出荷コードからの import は禁止 | 同 `:39-41`, `:205-215` |
-| 実効機構 | 旧 `scripts/check-dependency-whitelist.ts` + `test/` + `pnpm check:deps` を廃止し、各リポジトリ `oxlint.json` の `no-restricted-imports` に一本化する。`pnpm lint` が旧 `check:deps` の役割を吸収する | 本書 §5、[PACKAGE_STANDARD.md「`scripts/check-dependency-whitelist.ts` の廃止」](PACKAGE_STANDARD.md#scriptscheck-dependency-whitelistts-の廃止) |
-| `oxlint.json` の一致性 | 実効機構(oxlint)は全リポジトリ共通だが、`oxlint.json` の `no-restricted-imports` の中身は Tier ごと・リポジトリごとに異なってよい。byte-identical は適合条件ではない | 本書 §5 |
+| 実効機構 | 旧 `scripts/check-dependency-whitelist.ts` + `test/` + `pnpm check:deps` を廃止し、各リポジトリ `.oxlintrc.json` の `no-restricted-imports` に一本化する。`pnpm lint` が旧 `check:deps` の役割を吸収する | 本書 §5、[PACKAGE_STANDARD.md「`scripts/check-dependency-whitelist.ts` の廃止」](PACKAGE_STANDARD.md#scriptscheck-dependency-whitelistts-の廃止) |
+| `.oxlintrc.json` の一致性 | 実効機構(oxlint)は全リポジトリ共通だが、`.oxlintrc.json` の `no-restricted-imports` の中身は Tier ごと・リポジトリごとに異なってよい。byte-identical は適合条件ではない | 本書 §5 |
 | 現状の乖離 | `mc-worldgen` `mx-redstone` `mx-ui` `mx-multiplayer` の `package.json#dependencies` は宣言された依存グラフに追いついておらず、移行対象。`mc-sim` `mc-render` `mc-playground-kit` にも追加の乖離を発見(本書 §4) | 本書 §4、`MIGRATION_RUNBOOK.md`(別途) |
-| 新規依存の提案手順 | 消費側リポジトリの PR で `oxlint.json` + 本書を同時に更新し、`REVIEW_STANDARD.md` に沿って自己レビューする | 本書 §6 |
+| 新規依存の提案手順 | 消費側リポジトリの PR で `.oxlintrc.json` + 本書を同時に更新し、`REVIEW_STANDARD.md` に沿って自己レビューする | 本書 §6 |
 
 ## 1. 4層の依存グラフ(エッジレベル)
 
@@ -254,23 +254,33 @@ game」と明記しています。
 `mc-worldgen/scripts/check-dependency-whitelist.ts:4-8`)。
 
 **この組は org 標準から廃止します。** 代替は oxlint 組み込みの `no-restricted-imports` ルールで、
-パターン/正規表現ベースでモジュール群を制限できます(oxc 公式ドキュメント
+パターンベースでモジュール群を制限できます(oxc 公式ドキュメント
 `https://oxc.rs/docs/guide/usage/linter/rules/eslint/no-restricted-imports` で確認済み。
 `patterns` オプションの `regex` / `group` によるモジュール群指定、`paths` オプションによる
-単一モジュール指定の両方をサポートします)。各リポジトリの `oxlint.json` が、**自分自身の Tier
+単一モジュール指定の両方をサポートします)。各リポジトリの `.oxlintrc.json` が、**自分自身の Tier
 に基づいて自分自身の禁止パターンを宣言する**構成に変わり、`pnpm lint` が旧 `pnpm check:deps` の
 役割を吸収します。廃止の経緯と `api-lock.md` 側の並行した廃止は
 [PACKAGE_STANDARD.md「`scripts/check-dependency-whitelist.ts` の廃止」](PACKAGE_STANDARD.md#scriptscheck-dependency-whitelistts-の廃止)
 にも記載があるため、本書では重複説明を避け、実効機構の詳細と Tier ごとの設定例のみを示します。
 
-**`oxlint.json` は byte-identical でなくなります。これは意図した trade-off です。** 実効機構
+**重要: `patterns[].regex` は使わないこと。** 2026-08-01 の16リポジトリ移行作業で、`regex`
+キーはoxlint 1.76.0では**常に無音のno-op**であることが複数リポジトリ(mc-audio, mc-noise,
+mc-meshing, mc-physics, mc-worldgen, mc-save)で独立に実測・確認されました。否定先読み
+`(?!mc-kernel\b)`のような構文非対応(oxlintの正規表現エンジンはRustの`regex`クレートで
+lookaroundをサポートしない)だけでなく、単純な選択構造の`regex`パターンでさえ一致しません
+(mc-audioでの実測: `regex`使用時は該当パターンが0件ヒット、`group`使用時は正しく検出)。
+**`patterns[].group`(gitignore風のglobパターン配列。`!`で除外を表現)が唯一動作する形式**
+です。以下の設定例はすべてこの`group`形式に統一しています。旧`regex`形式の例をどこかで
+見かけたら、それは実効性のない見せかけの設定です。
+
+**`.oxlintrc.json` は byte-identical でなくなります。これは意図した trade-off です。** 実効機構
 (oxlint という「仕組み」)は全リポジトリ共通ですが、`no-restricted-imports` の中身(何を禁止
 するか)はリポジトリごとの許可グラフの行が異なる以上、必然的に異なります。以前の
 `check-dependency-whitelist.ts` は逐語的コピーの中で `REPOSITORY_POLICY` という1つの定数だけを
-差し替える設計でしたが、`oxlint.json` は最初からファイル全体がリポジトリ固有の設定ファイルで
+差し替える設計でしたが、`.oxlintrc.json` は最初からファイル全体がリポジトリ固有の設定ファイルで
 あり、「1つの定数以外は共通」という制約を維持する理由がありません。**許可グラフのロジックを
 16リポジトリで単一の情報源に集約すること自体は今回検討しましたが、明示的に見送りました。**
-各リポジトリの `oxlint.json` は今まで通り、そのリポジトリの実装者(または担当エージェント)が
+各リポジトリの `.oxlintrc.json` は今まで通り、そのリポジトリの実装者(または担当エージェント)が
 独立に保守します。
 
 なお `check-dependency-whitelist.ts` が担っていたチェックのうち、`no-restricted-imports` で
@@ -280,17 +290,17 @@ game」と明記しています。
 
 ### Tier ごとの設定例
 
-以下はいずれも実在する許可グラフの行(§1)に基づく例です。`"warn"` は既存の `oxlint.json` の
-慣行(`mc-kernel/oxlint.json:119-126` の `no-restricted-imports` エントリなど)に合わせています。
+以下はいずれも実在する許可グラフの行(§1)に基づく例です。`"warn"` は既存の `.oxlintrc.json` の
+慣行(`mc-kernel/.oxlintrc.json:119-126` の `no-restricted-imports` エントリなど)に合わせています。
 `"error"` に変える判断はリポジトリごとの裁量です。
 
 **Tier1(例: `mc-physics`。org内依存ゼロ)**
 
 ```jsonc
-// mc-physics/oxlint.json
+// mc-physics/.oxlintrc.json
 "no-restricted-imports": ["warn", {
   "patterns": [{
-    "regex": "^@nerima-games/(?!mc-kernel\\b).+",
+    "group": ["@nerima-games/**", "!@nerima-games/mc-kernel", "!@nerima-games/mc-kernel/**"],
     "message": "mc-physics is a Tier1 library (DEPENDENCY_POLICY.md) and must not depend on any other @nerima-games/* package. mc-kernel is universally importable and exempt."
   }]
 }]
@@ -299,10 +309,23 @@ game」と明記しています。
 **Tier2(例: `mc-worldgen`。許可先は `mc-noise`, `mc-save`)**
 
 ```jsonc
-// mc-worldgen/oxlint.json
+// mc-worldgen/.oxlintrc.json
 "no-restricted-imports": ["warn", {
   "patterns": [{
-    "regex": "^@nerima-games/(mc-meshing|mc-physics|mc-audio|mc-sim|mc-render|mc-playground-kit|mx-gameplay|mx-redstone|mx-ui|mx-multiplayer|mc-compose|mc-dev-meta)(/.*)?$",
+    "group": [
+      "@nerima-games/mc-meshing", "@nerima-games/mc-meshing/**",
+      "@nerima-games/mc-physics", "@nerima-games/mc-physics/**",
+      "@nerima-games/mc-audio", "@nerima-games/mc-audio/**",
+      "@nerima-games/mc-sim", "@nerima-games/mc-sim/**",
+      "@nerima-games/mc-render", "@nerima-games/mc-render/**",
+      "@nerima-games/mc-playground-kit", "@nerima-games/mc-playground-kit/**",
+      "@nerima-games/mx-gameplay", "@nerima-games/mx-gameplay/**",
+      "@nerima-games/mx-redstone", "@nerima-games/mx-redstone/**",
+      "@nerima-games/mx-ui", "@nerima-games/mx-ui/**",
+      "@nerima-games/mx-multiplayer", "@nerima-games/mx-multiplayer/**",
+      "@nerima-games/mc-compose", "@nerima-games/mc-compose/**",
+      "@nerima-games/mc-dev-meta", "@nerima-games/mc-dev-meta/**"
+    ],
     "message": "mc-worldgen (Tier2, DEPENDENCY_POLICY.md) may depend only on mc-noise, mc-save, and mc-kernel. Propose a graph change before adding this import."
   }]
 }]
@@ -311,15 +334,28 @@ game」と明記しています。
 **Tier3(例: `mx-ui`。許可先は `mc-sim`, `mc-audio`。横の `mx-*` 依存は禁止)**
 
 ```jsonc
-// mx-ui/oxlint.json
+// mx-ui/.oxlintrc.json
 "no-restricted-imports": ["warn", {
   "patterns": [
     {
-      "regex": "^@nerima-games/(mx-gameplay|mx-redstone|mx-multiplayer)(/.*)?$",
+      "group": [
+        "@nerima-games/mx-gameplay", "@nerima-games/mx-gameplay/**",
+        "@nerima-games/mx-redstone", "@nerima-games/mx-redstone/**",
+        "@nerima-games/mx-multiplayer", "@nerima-games/mx-multiplayer/**"
+      ],
       "message": "Tier3 experience modules do not depend on each other laterally (DEPENDENCY_POLICY.md §2). Talk through mc-sim or mc-worldgen instead."
     },
     {
-      "regex": "^@nerima-games/(mc-worldgen|mc-render|mc-meshing|mc-noise|mc-physics|mc-save|mc-playground-kit|mc-compose)(/.*)?$",
+      "group": [
+        "@nerima-games/mc-worldgen", "@nerima-games/mc-worldgen/**",
+        "@nerima-games/mc-render", "@nerima-games/mc-render/**",
+        "@nerima-games/mc-meshing", "@nerima-games/mc-meshing/**",
+        "@nerima-games/mc-noise", "@nerima-games/mc-noise/**",
+        "@nerima-games/mc-physics", "@nerima-games/mc-physics/**",
+        "@nerima-games/mc-save", "@nerima-games/mc-save/**",
+        "@nerima-games/mc-playground-kit", "@nerima-games/mc-playground-kit/**",
+        "@nerima-games/mc-compose", "@nerima-games/mc-compose/**"
+      ],
       "message": "mx-ui (Tier3, DEPENDENCY_POLICY.md) may depend only on mc-sim, mc-audio, and mc-kernel."
     }
   ]
@@ -329,20 +365,38 @@ game」と明記しています。
 **Tier4(例: `mc-compose`。9件の許可先 + `mc-kernel`。`mc-playground-kit` は禁止、Tier1兄弟は推移的にのみ到達可能で直接importは不可)**
 
 ```jsonc
-// mc-compose/oxlint.json
+// mc-compose/.oxlintrc.json
 "no-restricted-imports": ["warn", {
   "patterns": [
     {
-      "regex": "^@nerima-games/mc-playground-kit(/.*)?$",
+      "group": ["@nerima-games/mc-playground-kit", "@nerima-games/mc-playground-kit/**"],
       "message": "mc-playground-kit is devDependency-only (DEPENDENCY_POLICY.md §3); it must never be imported from shipped composition code."
     },
     {
-      "regex": "^@nerima-games/(mc-noise|mc-meshing|mc-physics)(/.*)?$",
+      "group": [
+        "@nerima-games/mc-noise", "@nerima-games/mc-noise/**",
+        "@nerima-games/mc-meshing", "@nerima-games/mc-meshing/**",
+        "@nerima-games/mc-physics", "@nerima-games/mc-physics/**"
+      ],
       "message": "mc-compose reaches these only transitively through mc-worldgen/mc-sim/mc-render. Reaching through a dependency is not an import licence (DEPENDENCY_POLICY.md §2, no-transitive-closure)."
     }
   ]
 }]
 ```
+
+### 前提条件: oxlint のバージョン
+
+**`no-restricted-imports` は oxlint 0.12.0 系には実装されておらず、常にno-opです。** 2026-08-01
+の移行作業で、`mc-render`・`mc-compose`・`mc-dev-meta`・`mx-gameplay` の4リポジトリが
+`package.json` で `oxlint: ^0.12.0` を固定しており、`.oxlintrc.json` を正しい名前・スキーマに
+直しても依存境界チェックが一切発火しないことを確認した。この4リポジトリでは、`oxlint` を
+(他リポジトリが既に使っている)`^1.76.0` 系まで上げない限り、本節の仕組みは見た目だけで
+機能しない。うち一部は既存の `feat/modernize-toolchain` ブランチで着手済み。バージョンを
+上げた後は、`categories` ブロックの `style`/`restriction` 等が一斉に有効化され、これまで
+検出されていなかった大量の既存コード警告(リポジトリごとに数百〜数千件)が同時に表面化する
+点にも注意すること — `no-restricted-imports` だけを狙って有効化したい場合は、`categories`
+の該当エントリを `"off"` にしつつ明示的な `rules` エントリだけを残す設計にすると影響を
+限定できる(`mc-save`・`mc-sim` の移行 PR で実証済みのパターン)。
 
 ## 6. 新しいクロスリポジトリ依存を提案する手順
 
@@ -350,7 +404,7 @@ game」と明記しています。
    依存、循環を作る依存は、そのままでは提案できません。共通ロジックが必要なら
    `@nerima-games/mc-kernel` への抽出を検討してください(§2 ルール3)。
 2. **消費側リポジトリで1つの PR を作る。** 対象は次の2ファイルです。
-   - 消費側リポジトリの `oxlint.json` — 新しい依存先を `no-restricted-imports` の禁止パターンから
+   - 消費側リポジトリの `.oxlintrc.json` — 新しい依存先を `no-restricted-imports` の禁止パターンから
      除外する(許可する)ように書き換える。
    - この `DEPENDENCY_POLICY.md`(本リポジトリ `.github`)— §1 の表と mermaid 図に新しいエッジを
      追加する。

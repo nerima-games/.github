@@ -62,7 +62,7 @@ nerima-games org の全16リポジトリが従う構成基準です。
 ├── tsconfig.test.json
 ├── tsconfig.preview.json      # [条件付き] apps/ がある場合のみ
 ├── playwright.config.ts       # [条件付き] mx-ui のみ
-├── oxlint.json
+├── .oxlintrc.json
 ├── vitest.config.ts
 ├── flake.nix
 ├── flake.lock
@@ -135,8 +135,8 @@ org 標準から完全に削除します。今後どのリポジトリでも必�
 
 ## `scripts/check-dependency-whitelist.ts` の廃止
 
-同じく org 標準から削除します。代替は各リポジトリの `oxlint.json` に書く
-`no-restricted-imports` ルールです。`mc-kernel/oxlint.json` は既に
+同じく org 標準から削除します。代替は各リポジトリの `.oxlintrc.json` に書く
+`no-restricted-imports` ルールです。`mc-kernel/.oxlintrc.json` は既に
 `no-restricted-imports` で `effect` のデフォルトインポート禁止を書いていますが
 (`effect` 本体からの `default` エクスポート禁止)、これを拡張して
 モジュール間の禁止importをここへ移します。**内容はリポジトリごとに違ってよく、
