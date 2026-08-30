@@ -214,7 +214,7 @@ Dependabot はロックファイルがなくても `package.json` の caret 範�
 ## ブランチ保護は Terraform 管理下にあり、本書の対象外です
 
 `main` の署名必須化や force-push 禁止は、この `.github` リポジトリのどのファイルでも定義しません。
-`/Users/take/ghq/github.com/takeokunn/private-terraform/projects/github/rulesets.tf` の
+`takeokunn/private-terraform` の `projects/github/rulesets.tf` の
 `github_repository_ruleset.nerima-games-public-main` が、全16リポジトリに対して
 `required_signatures = true` と `non_fast_forward = true` を適用しています。
 
