@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Check nerima-games repositories against the org-wide src/ migration standard
-# (PACKAGE_STANDARD.md, DOCS_STANDARD.md, TEST_STANDARD.md — see ../CONFORMANCE.md
-# for the checklist this script implements).
+# Check nerima-games repositories against the org-wide Wave 0 standard
+# (PACKAGE_STANDARD.md, DOCS_STANDARD.md, TEST_STANDARD.md, RELEASE_STANDARD.md
+# — see ../CONFORMANCE.md for the checklist this script implements).
 #
 #   ./check-conformance.sh <dir-containing-the-repos> [repo ...]
 #
@@ -9,6 +9,11 @@
 # Read-only: it runs no git command that writes.
 
 set -uo pipefail
+
+command -v jq >/dev/null 2>&1 || {
+  echo "check-conformance.sh: jq is required to parse package.json (main/exports/publishConfig are nested since the Wave 0 dist migration; a line-oriented grep cannot match them reliably)." >&2
+  exit 2
+}
 
 ROOT="${1:?usage: check-conformance.sh <dir-containing-the-repos> [repo ...]}"
 shift || true
@@ -57,15 +62,30 @@ dev_tool_reason() {
   esac
 }
 
-# vitest.config.ts coverage thresholds (TEST_STANDARD.md §4): these 3
-# repositories are named, tracked known-gaps at rollout time, not silent
-# failures and not silent passes.
-COVERAGE_EXEMPT=" mc-audio mc-compose mc-playground-kit "
+# vitest.config.ts coverage thresholds (TEST_STANDARD.md §3): Wave 0 rolled
+# the 4-metric gate out to all 16 repositories at 99% with no staged
+# exceptions, then raised the bar to 100% once the last stragglers closed the
+# gap. There are currently no named exemptions; this list stays as the
+# mechanism (not deleted) so a future genuine known-gap has somewhere to go
+# without re-inventing the skip/reason plumbing.
+COVERAGE_EXEMPT=""
 
 coverage_exempt_reason() {
   case $1 in
-    mc-audio|mc-compose|mc-playground-kit) printf 'known migration-in-progress, tracked in MIGRATION_RUNBOOK.md' ;;
     *) printf 'coverage gate known-gap' ;;
+  esac
+}
+
+# .github/workflows/release.yaml (RELEASE_STANDARD.md): mc-dev-meta is
+# "private": true and explicitly out of RELEASE_STANDARD.md's scope (its own
+# §0 excludes it by name) — it is never published, so it has no release
+# workflow to check for.
+RELEASE_EXEMPT=" mc-dev-meta "
+
+release_exempt_reason() {
+  case $1 in
+    mc-dev-meta) printf 'private, unpublished pnpm-workspace binder; RELEASE_STANDARD.md scopes itself to the other 15 repositories' ;;
+    *) printf 'release workflow does not apply to this repository' ;;
   esac
 }
 
@@ -95,10 +115,11 @@ skip() {
 check_repo() {
   local repo=$1 dir="$ROOT/$repo"
 
-  local is_porting_exempt=0 is_dev_tool=0 is_coverage_exempt=0
+  local is_porting_exempt=0 is_dev_tool=0 is_coverage_exempt=0 is_release_exempt=0
   [[ $PORTING_EXEMPT == *" $repo "* ]] && is_porting_exempt=1
   [[ $DEV_TOOL_REPOS == *" $repo "* ]] && is_dev_tool=1
   [[ $COVERAGE_EXEMPT == *" $repo "* ]] && is_coverage_exempt=1
+  [[ $RELEASE_EXEMPT == *" $repo "* ]] && is_release_exempt=1
 
   printf '\n\033[1m%s\033[0m\n' "$repo"
 
@@ -145,14 +166,27 @@ check_repo() {
   [[ ! -f "$dir/scripts/check-dependency-whitelist.ts" ]]
   ok $? "scripts/check-dependency-whitelist.ts removed"
 
-  # ---------- 4. package.json ----------
+  # ---------- 4. package.json (dist shape, PACKAGE_STANDARD.md "package.json の必須フィールドとスクリプト") ----------
   local pkg="$dir/package.json"
   if [[ -f $pkg ]]; then
-    grep -qE '"main"[[:space:]]*:[[:space:]]*"\./src/index\.ts"' "$pkg"
-    ok $? "package.json main points to ./src/index.ts"
+    if [[ $repo == mc-compose ]]; then
+      # PACKAGE_STANDARD.md "package.json の必須フィールドとスクリプト": mc-compose has no downstream importer
+      # (it ships a web bundle via `vite build`, not a library) and keeps
+      # publishing its source entry point directly. Encoded explicitly here
+      # as its own pair of checks, rather than loosening the dist check for
+      # every repository.
+      jq -e '.main == "./src/index.ts"' "$pkg" >/dev/null 2>&1
+      ok $? "package.json main stays ./src/index.ts (mc-compose exception)"
 
-    grep -qE '"\."[[:space:]]*:[[:space:]]*"\./src/index\.ts"' "$pkg"
-    ok $? "package.json exports[\".\"] points to ./src/index.ts"
+      jq -e '.exports["."] == "./src/index.ts"' "$pkg" >/dev/null 2>&1
+      ok $? "package.json exports[\".\"] stays ./src/index.ts (mc-compose exception)"
+    else
+      jq -e '.main == "./dist/index.js"' "$pkg" >/dev/null 2>&1
+      ok $? "package.json main points to ./dist/index.js"
+
+      jq -e '(.exports["."].types == "./dist/index.d.ts") and (.exports["."].import == "./dist/index.js")' "$pkg" >/dev/null 2>&1
+      ok $? "package.json exports[\".\"] points to ./dist/index.{js,d.ts}"
+    fi
 
     ! grep -qE '"(api:check|api:update|check:deps)"[[:space:]]*:' "$pkg"
     ok $? "no api:check/api:update/check:deps scripts remain"
@@ -188,6 +222,15 @@ check_repo() {
     grep -q 'permissions:' "$ci"
     ok $? "ci.yaml declares a permissions: block"
 
+    # packages: read (PACKAGE_STANDARD.md "package.json の必須フィールドとスクリプト" / workflow-templates/ci.yml): needed so
+    # `pnpm install` can resolve @nerima-games/* siblings published to GitHub
+    # Packages. Checked uniformly across all 16 repos, same as D.1 itself —
+    # mc-kernel is the one repo expected to still be red here (it is the
+    # source D.1 was derived from, has zero @nerima-games/* deps, and Wave 0
+    # does not add this to kernel's own ci.yaml).
+    grep -qE '^[[:space:]]*packages:[[:space:]]*read\b' "$ci"
+    ok $? "ci.yaml permissions include packages: read"
+
     # Every `uses:` line that is not pinned to a 40-char commit SHA, naming the
     # action so the fix is obvious. Local composite actions (./.github/...)
     # have no SHA to pin and are excluded, same as the nerima-lisp reference.
@@ -198,7 +241,7 @@ check_repo() {
       if ! [[ $u =~ @[0-9a-f]{40}([[:space:]]|$) ]]; then
         unpinned_list="$unpinned_list ${u%%@*}"
       fi
-    done < <(grep -E '^[[:space:]]*(-[[:space:]]*)?uses:' "$ci" | sed -E 's/^[[:space:]]*(-[[:space:]]*)?uses:[[:space:]]*//')
+    done < <(grep -E '^[[:space:]]*(-[[:space:]]*)?uses:' "$ci" | perl -pe 's/^\s*(-\s*)?uses:\s*//')
     unpinned_list=$(tr ' ' '\n' <<<"$unpinned_list" | grep -v '^$' | sort -u | tr '\n' ' ')
     unpinned_list=${unpinned_list% }
     [[ -z $unpinned_list ]]
@@ -211,19 +254,35 @@ check_repo() {
   [[ -f "$dir/.github/dependabot.yml" ]]
   ok $? ".github/dependabot.yml exists"
 
-  # ---------- 8. coverage gate ----------
+  # ---------- 8. release workflow (RELEASE_STANDARD.md §3; workflow-templates/release.yml) ----------
+  if [[ $is_release_exempt -eq 1 ]]; then
+    skip ".github/workflows/release.yaml ($(release_exempt_reason "$repo"))"
+  else
+    [[ -f "$dir/.github/workflows/release.yaml" ]]
+    ok $? ".github/workflows/release.yaml exists"
+  fi
+
+  # ---------- 9. coverage gate ----------
   if [[ $is_coverage_exempt -eq 1 ]]; then
     skip "vitest.config.ts coverage thresholds ($(coverage_exempt_reason "$repo"))"
   else
-    local vitest="$dir/vitest.config.ts" vitest_code
+    local vitest="$dir/vitest.config.ts" vitest_code thresholds_block
     if [[ -f $vitest ]]; then
       # Strip comment-only lines first: a commented-out
-      # `//   thresholds: { ... 99 ... }` must not read as an active gate.
+      # `//   thresholds: { ... 100 ... }` must not read as an active gate.
       vitest_code=$(grep -v '^[[:space:]]*//' "$vitest")
-      grep -qE 'thresholds:[[:space:]]*\{[^}]*99' <<<"$vitest_code"
-      ok $? "vitest.config.ts has an active thresholds block with 99"
+      thresholds_block=$(grep -oE 'thresholds:[[:space:]]*\{[^}]*\}' <<<"$vitest_code")
+      if [[ -n $thresholds_block ]] \
+        && grep -qE 'branches:[[:space:]]*100\b' <<<"$thresholds_block" \
+        && grep -qE 'functions:[[:space:]]*100\b' <<<"$thresholds_block" \
+        && grep -qE 'lines:[[:space:]]*100\b' <<<"$thresholds_block" \
+        && grep -qE 'statements:[[:space:]]*100\b' <<<"$thresholds_block"; then
+        ok 0 "vitest.config.ts has an active thresholds block at 100"
+      else
+        ok 1 "vitest.config.ts has an active thresholds block at 100"
+      fi
     else
-      ok 1 "vitest.config.ts has an active thresholds block with 99" "vitest.config.ts not found"
+      ok 1 "vitest.config.ts has an active thresholds block at 100" "vitest.config.ts not found"
     fi
   fi
 }

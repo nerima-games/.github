@@ -1,5 +1,37 @@
 # 移行実行手順書(MIGRATION_RUNBOOK.md)
 
+## 完了(Wave 0、2026-08-30)
+
+**本書が定める手順1〜8は、Wave 0 のロールアウトをもって完了とします。** 以後この文書は
+実行対象の TODO リストではなく、当時の移行がどう行われたかの記録として残します
+(新しい移行は各標準文書自身の「現状」節、および `CONFORMANCE.md` の実行結果を参照してください)。
+
+2026-08-30 時点で同期スナップショット(`mc-dev-meta` を除く15リポジトリ)を再確認したところ、
+以下の2件が未完了のまま残っています。これは「完了」の判断を覆す理由にはせず、
+`CONFORMANCE.md`(§3「廃止物の不在」)が個別リポジトリの不適合として引き続き赤く報告する、
+通常の追跡対象として扱います。
+
+- `mx-gameplay`: `api-lock.md`(手順2)と `scripts/check-dependency-whitelist.ts`(手順3)が
+  まだ削除されていない。
+- `mc-audio`: `scripts/check-dependency-whitelist.ts`(手順3)がまだ削除されていない。
+
+他13リポジトリはこの2件の残存物を持ちません。手順1(`src/` 再構成)・手順5(SHA固定)・
+手順6(Dependabot)は、確認できた15リポジトリ全部で完了しています。手順7(カバレッジゲート)
+は組織決定自体が2026-08-01時点の99%からWave 0で100%へ引き上げられており(TEST_STANDARD.md
+§3)、現在の未達リポジトリの一覧は本書ではなく `CONFORMANCE.md` の実行結果を参照してください。
+手順4(依存drift修正)は対象4リポジトリのうち3リポジトリ(`mc-worldgen` `mx-redstone` `mx-ui`)
+は解消済み、`mx-multiplayer` は `@nerima-games/mc-kernel` の宣言が package.json に見当たらず
+未確認のまま残っています。
+
+以下、本文は当時(2026-08-01)書かれたままの手順書として保存します。**本文中の具体的な値
+(commit SHA、パッケージバージョン番号など)はすべて2026-08-01時点のものであり、現在の値では
+ありません。** 例えば手順5が示す `actions/checkout` 等のSHAは、2026-08-30時点の
+`workflow-templates/ci.yml` / `workflow-templates/release.yml` が実際に使う値
+(`v7.0.1` / `v7.0.0` 系)とは異なる、より古い(`v6` 系の)ピン留めです。今どの値を使うべきかは
+本文ではなく、常に `workflow-templates/` 配下の現物を参照してください。
+
+---
+
 本書は、既存の nerima-games 16 リポジトリ(`mc-audio` `mc-compose` `mc-dev-meta` `mc-kernel`
 `mc-meshing` `mc-noise` `mc-physics` `mc-playground-kit` `mc-render` `mc-save` `mc-sim`
 `mc-worldgen` `mx-gameplay` `mx-multiplayer` `mx-redstone` `mx-ui`)を、本 org が今回策定した
