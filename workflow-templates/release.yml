@@ -1,91 +1,135 @@
+# Wave 0 (2026-08-30): copied verbatim from mc-kernel's origin/main
+# .github/workflows/release.yaml (RELEASE_STANDARD.md §3) -- NOT the
+# changesets/action-driven "Version Packages" PR flow this file previously
+# held. See RELEASE_STANDARD.md §3.1 for why: publish is irreversible, and
+# only this detect/publish/tag shape re-verifies
+# (`pnpm verify && pnpm package:verify`) immediately before publishing.
+# mc-compose is the one repository that drops the `pnpm package:verify` line
+# from the `publish` job (PACKAGE_STANDARD.md "package.json の必須
+# フィールドとスクリプト" -- it has no dist/ to verify).
 name: Release
 
 on:
   push:
-    branches: [$default-branch]
+    branches: [main]
 
-# changesets/action needs to push the "Version Packages" branch/commit, open
-# or update the PR for it, and -- once that PR is merged -- publish to
-# GitHub Packages. This workflow only ever runs on a push to the default
-# branch (never on a fork pull_request), so granting write here does not
-# hand a writable token to untrusted code. See RELEASE_STANDARD.md §3.2.
 permissions:
-  contents: write # push the Version Packages branch / release commit
-  pull-requests: write # open/update the Version Packages PR
-  packages: write # `pnpm publish` to npm.pkg.github.com
-
-# One release flow per branch at a time; never cancel a publish mid-flight.
-concurrency:
-  group: release-${{ github.ref }}
-  cancel-in-progress: false
+  contents: read
 
 jobs:
-  release:
-    name: Version or Publish
+  # Deciding whether to publish is separated from publishing on purpose.
+  #
+  # This job sets up neither Node nor pnpm, because it needs neither. When the
+  # two were fused, a push that correctly decided NOT to publish still ran
+  # actions/setup-node with `cache: pnpm`, skipped the install, and then failed
+  # in the cache's post step with "Path(s) specified in the action for caching
+  # do(es) not exist" -- a red Release run reporting a decision that was right.
+  # A red gate is supposed to be evidence about the work, so a gate that goes
+  # red on its own success path has to be fixed rather than tolerated.
+  detect:
+    if: github.event.before != '0000000000000000000000000000000000000000'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 5
+    outputs:
+      changed: ${{ steps.version.outputs.changed }}
+      version: ${{ steps.version.outputs.current }}
+
     steps:
       - name: Checkout
-        # SHA resolved 2026-08-01 via `gh api repos/actions/checkout/git/ref/tags/v6.1.0`.
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # changesets needs full history to diff .changeset/*.md against the
-          # base branch; a shallow clone would make `changeset version` (run
-          # by changesets/action below) treat every changeset as unresolved.
+          # The previous commit has to be readable to diff the version out of
+          # it; a shallow clone cannot answer that question.
           fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check whether the package version changed
+        id: version
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          current="$(node -p "require('./package.json').version")"
+          previous="$(git show "${BEFORE_SHA}:package.json" | node -p "JSON.parse(require('fs').readFileSync(0, 'utf8')).version")"
+
+          printf 'current=%s\n' "${current}" >> "${GITHUB_OUTPUT}"
+
+          if [[ "${current}" == "${previous}" ]]; then
+            printf 'changed=false\n' >> "${GITHUB_OUTPUT}"
+            printf 'package version unchanged (%s); skipping publish\n' "${current}"
+          else
+            printf 'changed=true\n' >> "${GITHUB_OUTPUT}"
+            printf 'package version changed: %s -> %s\n' "${previous}" "${current}"
+          fi
+
+  publish:
+    needs: detect
+    if: needs.detect.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Setup pnpm
-        # Same pin as workflow-templates/ci.yml -- keep the two in sync.
-        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
 
       - name: Setup Node.js
-        # SHA resolved 2026-08-01 via `gh api repos/actions/setup-node/git/ref/tags/v6.5.0`.
-        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "24"
           cache: "pnpm"
-          # Required so `pnpm publish` resolves to GitHub Packages using
-          # NODE_AUTH_TOKEN below, per RELEASE_STANDARD.md §3.2.
-          registry-url: "https://npm.pkg.github.com"
+          registry-url: https://npm.pkg.github.com
+
+      - name: Set up Nix
+        uses: ./.github/actions/nix-setup
+        with:
+          cachix-cache: ${{ vars.CACHIX_CACHE }}
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile --ignore-scripts
+        run: nix develop --command pnpm install --frozen-lockfile
 
-      # changesets/action does one of two things, depending on repository
-      # state (RELEASE_STANDARD.md §1.3, §3.1):
-      #   - if there are unconsumed .changeset/*.md files on main, it opens or
-      #     updates a "Version Packages" PR that runs the `version` command
-      #     below (bumps package.json#version, appends to CHANGELOG.md);
-      #   - once that PR is merged (no pending changesets, version already
-      #     bumped on this push), it runs the `publish` command instead,
-      #     which is what actually calls `pnpm publish` against GitHub
-      #     Packages.
-      # A single job/step handles both branches because changesets/action
-      # itself decides which one applies; RELEASE_STANDARD.md §3.1 recommends
-      # this over hand-rolling a `git diff -- package.json` version-bump
-      # check.
-      #
-      # This workflow does not re-run typecheck/lint/test itself before
-      # publishing (RELEASE_STANDARD.md §3.3 leaves that choice to each
-      # repository). As shipped, it relies on branch protection already
-      # having required workflow-templates/ci.yml to pass before anything
-      # reaches main. If this repository's branch protection does not
-      # enforce that, add an explicit verify step before this one.
-      - name: Create Release Pull Request or Publish to GitHub Packages
-        # SHA resolved 2026-08-01 via
-        # `gh api repos/changesets/action/git/ref/tags/v1.9.0` (annotated tag,
-        # unwrapped one level to the commit).
-        uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1.9.0
-        with:
-          version: pnpm changeset version
-          publish: pnpm publish --no-git-checks
+      # The same package checks the branch protection runs, repeated here
+      # because publishing is irreversible: a version number, once taken on the
+      # registry, cannot be reused.
+      - name: Verify package and tests
+        run: |
+          nix develop --command pnpm verify
+          nix develop --command pnpm package:verify
+
+      - name: Publish to GitHub Packages
         env:
-          # Used by changesets/action itself to push the Version Packages
-          # branch and open/update its PR.
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Used by `pnpm publish` to authenticate against
-          # npm.pkg.github.com. GitHub Packages accepts the workflow's own
-          # GITHUB_TOKEN once the job has `packages: write` above
-          # (RELEASE_STANDARD.md §3.2) -- no separate NPM_TOKEN or PAT secret
-          # exists or is needed for this registry.
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: nix develop --command pnpm publish --no-git-checks
+
+  # Publishing without tagging leaves the registry as the only record of what
+  # shipped: nineteen versions were published against a single tag before this
+  # job existed, so "which commit is 0.2.14?" had no answer in the repository.
+  # It runs after publish so a tag never claims a release that did not happen.
+  tag:
+    needs: [detect, publish]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Tag the published version
+        env:
+          VERSION: ${{ needs.detect.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git tag "v${VERSION}" "${GITHUB_SHA}"
+          git push origin "v${VERSION}"

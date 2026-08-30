@@ -7,11 +7,21 @@ nerima-games org の全16リポジトリが従う構成基準です。
 `mc-physics` `mc-playground-kit` `mc-render` `mc-save` `mc-sim` `mc-worldgen` `mx-gameplay`
 `mx-multiplayer` `mx-redstone` `mx-ui` の16個です。
 
-この文書は **`src/` 再構成後の目標状態** を記述します。
-現時点でこの形になっているリポジトリはまだ存在しません。
-たとえば `mc-kernel` は本書執筆時点で `index.ts` / `domain/` がリポジトリ直下に置かれており
-(`src/` を経由していません)、`mc-render` と `mx-ui` も同様に `application/` `stages/` が
-直下にあります。この文書はそれらを `src/` 配下へ寄せるための、移行先の仕様書です。
+この文書は **`src/` 再構成後、かつ Wave 0 の dist 公開形への移行後の目標状態** を記述します。
+
+`src/` 再構成(旧・移行手順1)自体は 2026-08-30 時点で16リポジトリ全部が完了しています。
+残る移行対象は公開形(`package.json` の `main` / `exports["."]` / `files` / ビルド手段)です。
+`mc-kernel` `mc-audio` `mc-meshing` `mc-noise` `mc-physics` `mc-playground-kit` `mc-render`
+`mc-save` `mc-sim` `mc-worldgen` の10リポジトリは既に `main`/`exports["."]` が `./dist/...`
+を指す形に到達していますが、そのビルド手段は不統一です(`mc-kernel` `mc-audio` `mc-noise`
+`mc-save` は `tsc -p tsconfig.release.json` の単一ステップ、`mc-render` `mc-playground-kit`
+は esbuild バンドルを併用、`mc-sim` は tsdown、`mc-worldgen` は `tsx scripts/build-package.ts`
+を経由するなど)。`mc-compose` `mx-gameplay` `mx-multiplayer` `mx-redstone` `mx-ui` の5リポジトリ
+は `main`/`exports["."]` がまだ `./src/index.ts` を指す旧形のままです(`mc-compose` は
+下記「`package.json` の必須フィールドとスクリプト」節の通り今後もこの形を維持する
+恒久的な例外、残り4つは移行対象)。本書「`package.json` の
+必須フィールドとスクリプト」節が定める dist 形・`tsc -p tsconfig.release.json` 単一ビルドが、
+これらのリポジトリが揃って到達すべき唯一の形です。
 
 ## 4層の依存アーキテクチャ
 
@@ -129,11 +139,14 @@ Tier3 の4つ (`mx-gameplay` `mx-redstone` `mx-ui` `mx-multiplayer`) は全員�
 ## `api-lock.md` / `scripts/api-lock.ts` の廃止
 
 org 標準から完全に削除します。今後どのリポジトリでも必須としません。
-`mc-kernel` `mc-render` `mx-ui` は本書執筆時点でまだ `api-lock.md` と `scripts/api-lock.ts`
-(および `package.json` の `api:check` / `api:update` スクリプト)を持っていますが、
-これは移行の対象であり、保持すべき現状ではありません。`src/` 移行と合わせて削除してください。
+2026-08-30 時点で `mx-gameplay` のみがまだ `api-lock.md` を保持しており、これは移行の対象であり、
+保持すべき現状ではありません。他15リポジトリは既に削除済みです。`scripts/api-lock.ts`
+はどのリポジトリにも残っていません。
 
 ## `scripts/check-dependency-whitelist.ts` の廃止
+
+2026-08-30 時点で `mc-audio` と `mx-gameplay` の2リポジトリがまだこのファイルを保持しており、
+移行対象です。他14リポジトリは既に削除済みです。
 
 同じく org 標準から削除します。代替は各リポジトリの `.oxlintrc.json` に書く
 `no-restricted-imports` ルールです。`mc-kernel/.oxlintrc.json` は既に
@@ -160,46 +173,88 @@ Nix をインストールしてから `nix develop --command pnpm lint` を実�
 
 ## `package.json` の必須フィールドとスクリプト
 
-`src/` 移行に伴い、以下を書き換えます。`mc-kernel/package.json` (移行前)を例に、
-移行後の値を示します。
+`src/` 再構成は全16リポジトリで完了済みです(前節参照)。ここからは Wave 0 が定める
+**dist 公開形**への移行を扱います。ソースは引き続き `src/` の下に置きますが、公開されるのは
+`src/` 自体ではなく、`tsc -p tsconfig.release.json` が `src/` から emit する `dist/` です。
+`mc-kernel/package.json`(0.5.0、既に dist 形に到達済み)を基準形として値を示します。
 
-| フィールド | 移行前 (`mc-kernel` 現状) | 移行後 |
+| フィールド | 直接公開形(`mc-compose` など、移行対象) | dist 公開形(目標。全リポジトリ共通の書式) |
 |---|---|---|
-| `main` | `"./index.ts"` | `"./src/index.ts"` |
-| `types` | `"./index.ts"` | `"./src/index.ts"` |
-| `exports["."]` | `"./index.ts"` | `"./src/index.ts"` |
-| `files` | `["index.ts", "domain", "tsconfig.base.json", "LICENSE", "README.md"]` | `["src", "tsconfig.base.json", "LICENSE", "README.md"]` |
-| `scripts.lint` | `"oxlint --deny-warnings index.ts domain scripts test"` | `"oxlint --deny-warnings src scripts test"` |
-| `scripts.lint:fix` | `"oxlint --fix index.ts domain scripts test"` | `"oxlint --fix src scripts test"` |
-| `scripts.verify` | `"pnpm typecheck && pnpm lint && pnpm check:deps && pnpm api:check && pnpm test"` | `"pnpm typecheck && pnpm lint && pnpm test"` |
+| `main` | `"./src/index.ts"` | `"./dist/index.js"` |
+| `types` | `"./src/index.ts"` | `"./dist/index.d.ts"` |
+| `exports["."]` | `"./src/index.ts"`(文字列) | `{ "types": "./dist/index.d.ts", "import": "./dist/index.js", "default": "./dist/index.js" }`(オブジェクト) |
+| `exports["./<sub>"]` | (通常持たない) | `docs/public-api.md` が公開契約と宣言したモジュールだけ、同じ形で `./dist/<sub>.js` / `.d.ts` を指す。サブパスを増やす基準は本書ではなく `docs/public-api.md` が持つ |
+| `files` | `["src", "tsconfig.base.json", "LICENSE", "README.md"]` | `["dist", "LICENSE", "README.md"]`(kernel のみ他リポジトリが `extends` する `"tsconfig.base.json"` を追加) |
+| `publishConfig.access` | `"restricted"` | `"public"`(RELEASE_STANDARD.md §2。2026-08-08 に全パッケージを public 化済みで、`restricted` のままだと新規 publish が private に戻り下流 CI が 403 になる) |
 
-`files` は `"index.ts", "domain"` のような個別列挙をやめ、`"src"` 一語に集約します。
-`application/` `stages/` を持つリポジトリでも同様に `"src"` 一語で足ります
-(それらは `src/application/` `src/stages/` として `src/` の中に入るため)。
+`main`/`exports["."]` が `./dist/...` を指すのに対し、`oxlint` の対象パスと
+`tsconfig.build.json`/`tsconfig.test.json` の `include` は引き続き `src`(と `test` `scripts`)
+を指します。「配布物」と「lint/型検査の対象」は別の問いであり、dist 化によって後者が
+変わるわけではありません。
 
-`apps/` を持つリポジトリは `scripts.typecheck` に `tsconfig.preview.json` の型検査を追加し
-(`mc-render/package.json` の現状の並び `tsc -p tsconfig.build.json ... && tsc -p
-tsconfig.test.json ... && tsc -p tsconfig.preview.json ...` を移行後もそのまま踏襲)、
-`scripts.lint` / `scripts.lint:fix` の対象パスに `apps` を追加します。
-`mx-ui` のように `test-browser/` を持つ場合はそこにも `test-browser` を追加し、
-`scripts.test:browser` (`"playwright test"`) を維持します。
+`scripts` は次の10個に統一します(存在するディレクトリだけ列挙。`apps/` を持つリポジトリは
+`typecheck` に `tsconfig.preview.json` の型検査を追加し、`lint`/`lint:fix` の対象パスに
+`apps` を、`mx-ui` のように `test-browser/` を持つ場合はさらに `test-browser` を加えます):
+
+```jsonc
+{
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.build.json --pretty false && tsc -p tsconfig.test.json --pretty false",
+    "build": "node scripts/clean-dist.mjs && tsc -p tsconfig.release.json --pretty false",
+    "lint": "oxlint --deny-warnings src test scripts apps && ast-grep scan",
+    "lint:fix": "oxlint --fix src test scripts apps",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "verify": "pnpm typecheck && pnpm lint && pnpm test",
+    "package:verify": "pnpm build && node scripts/verify-package.mjs",
+    "prepublishOnly": "pnpm verify && pnpm package:verify"
+  }
+}
+```
+
+`build` が `tsc -p tsconfig.release.json` の単一ステップである点が重要です。esbuild / tsdown
+によるバンドルは**廃止**します。理由: バンドルは `exports` サブパスと declaration map(型定義が
+どのソースファイルに対応するかの対応表)を壊し、`mirror`/`repoint` ゲートが型の同一性を
+検証できなくなります。`scripts/clean-dist.mjs`(`dist/` を消すだけ)と
+`scripts/verify-package.mjs`(publish される tarball の中身を実際に検証する)は
+`mc-kernel/scripts/` からコピーします。`pretest`/`pretest:coverage` のような
+「test の前に毎回 build する」フックは削除し、dist に対する検証は `package:verify` の役目に
+一本化します。
 
 `verify` から `check:deps` と `api:check` を外すのは、それぞれの裏付けとなるスクリプト
 (`scripts/check-dependency-whitelist.ts` と `scripts/api-lock.ts`)自体を廃止するためであり、
-省略ではありません。
+省略ではありません。`test:coverage` も `verify` には含めません(TEST_STANDARD.md §1 参照)。
+
+**`mc-compose` は上記 dist 公開形の例外です**。compose を import する下流リポジトリが
+存在せず、配布物は `vite build` が生成する web バンドルであるため、`main`/`exports["."]` は
+`./src/index.ts` のまま維持し、`package:verify`(dist の中身検証)を持ちません。この例外は
+compose 1件に限定され、他のリポジトリへ緩和として広げないでください
+(`CONFORMANCE.md` §4 が compose 用に別条件として明示的にコード化しています)。
 
 ## 必須 tsconfig ファイル
 
 `mc-kernel` (Tier1、`application/` `stages/` `apps/` いずれもなし)を基準形として、
-以下5ファイルを全リポジトリに必須とします。
+以下6ファイルを全リポジトリに必須とします。dist 公開形への移行に伴い、
+「配布物への型検査(check-only)」を担う `tsconfig.build.json` と、
+「実際に `dist/` へ emit するビルド」を担う `tsconfig.release.json` を分けて持つ点が
+`src/` 再構成時点からの追加点です。
 
-| ファイル | 役割 | `include` (移行後、`src/` 前提) |
+| ファイル | 役割 | `include` |
 |---|---|---|
 | `tsconfig.base.json` | 全 tsconfig 共通のコンパイラオプション。`strict: true` に加えて全strictnessフラグを明示 | (自身は `include` を持たない) |
 | `tsconfig.json` | エディタ/言語サーバ既定。リポジトリ全体を対象 | `src/**/*.ts`, `test/**/*.ts`, `scripts/**/*.ts`, `vitest.config.ts`(+ `apps/**/*.ts` があれば) |
-| `tsconfig.build.json` | 配布物の型検査。CIゲート | `src/index.ts`, `src/domain/**/*.ts`(+ `src/application/**/*.ts`, `src/stages/**/*.ts` があれば) |
+| `tsconfig.build.json` | 配布物の型検査(`noEmit`、CIゲート)。`pnpm typecheck` から呼ばれる | `src/index.ts`, `src/domain/**/*.ts`(+ `src/application/**/*.ts`, `src/stages/**/*.ts` があれば) |
+| `tsconfig.release.json` | 実際に `dist/` へ emit するビルド本体。`extends: "./tsconfig.base.json"`、`noEmit: false`、`rootDir: "src"`、`outDir: "dist"`。`include`/`exclude` は `tsconfig.build.json` と同じ対象に加え、`test/**` `scripts/**` `**/*.test.ts` `**/*.spec.ts` を明示的に `exclude`。`pnpm build` から呼ばれる | `src/index.ts`, `src/domain/**/*.ts`(+ `src/application/**/*.ts`, `src/stages/**/*.ts` があれば) |
 | `tsconfig.test.json` | テストと開発ツールの型検査。`types: ["node"]` はここだけで有効 | `src/**/*.ts`, `test/**/*.ts`, `scripts/**/*.ts`, `vitest.config.ts` |
 | `tsconfig.preview.json` | [条件付き] `apps/` がある場合のみ | `apps/**/*.ts`, `src/**/*.ts` |
+
+`tsconfig.build.json` と `tsconfig.release.json` の `include` は同じ対象を指しますが、役割は
+異なります。前者は型を検査するだけで何も出力しない(`pnpm typecheck` の一部として、変更を
+保存するたびに実行しても壊れない速さのゲート)。後者は実際に `dist/*.js` / `dist/*.d.ts` を
+書き出す(`pnpm build` / `pnpm package:verify` からのみ呼ばれる、公開物を作る側の設定)。
+1つの `tsconfig` に両方の役目を持たせない(`noEmit` の値で分岐させたりしない)のは、
+「型検査だけ通したいエディタ操作」と「実際に配布物を作る操作」を誤って混同しないためです。
 
 `tsconfig.base.json` の役割で特に重要なのは、`mc-kernel/tsconfig.base.json` のコメントが
 明記する方針です。「`lib: ["ES2024"]` のみで DOM も WebWorker も Node globals も持たない」
@@ -233,9 +288,10 @@ shipped project would be the `"DOM"` flag arriving by the back door」とある�
 | `application/` あり | `['index.ts', 'domain/**/*.ts', 'application/**/*.ts']`(`mc-render` 現状) | `['src/index.ts', 'src/domain/**/*.ts', 'src/application/**/*.ts']` |
 | `stages/` あり | (同上に追加) | 上記に `'src/stages/**/*.ts'` を追加 |
 
-`mc-kernel/vitest.config.ts` は `thresholds: { branches: 99, functions: 99, lines: 99,
-statements: 99 }` を有効化していますが、これは各リポジトリの完成度に応じた個別判断であり、
-本書が規定する対象ではありません(閾値の有無・値は `docs/testing.md` で個別に扱います)。
+`mc-kernel/vitest.config.ts` は `thresholds: { branches: 100, functions: 100, lines: 100,
+statements: 100 }` を有効化していますが、これは各リポジトリの完成度に応じた個別判断であり、
+本書が規定する対象ではありません(閾値そのものは `TEST_STANDARD.md` §3 が組織決定として定め、
+各リポジトリでの有効化状況は `docs/testing.md` で個別に扱います)。
 
 ## なぜ `src/` か
 
@@ -250,12 +306,20 @@ statements: 99 }` を有効化していますが、これは各リポジトリ�
 すり抜ける」という2方向の事故につながります。
 
 `src/` の下に配布対象(`index.ts` `domain/` `application/` `stages/`)をすべて集約すると、
-`files` は `"src"` の一語で済み、`oxlint` の対象は `src` 一語、`tsconfig.build.json` の
-`include` は `src/**/*.ts` の一語で表現できます(条件付きディレクトリの粒度を保つために
-本書では `src/index.ts` `src/domain/**/*.ts` のように書き分けていますが、境界が
-「`src/` の内か外か」という1つの問いに単純化される点は変わりません)。
-`apps/` を `src/` の外に置くのは、この「配布対象は `src/` の中」という単純な境界を守るためで、
-プレビュー/デモのエントリは配布物ではないので `src/` の中に紛れ込ませません。
+`oxlint` の対象は `src` 一語、`tsconfig.build.json`/`tsconfig.release.json` の `include` は
+`src/**/*.ts` の一語で表現できます(条件付きディレクトリの粒度を保つために本書では
+`src/index.ts` `src/domain/**/*.ts` のように書き分けていますが、「lint/型検査の対象は `src/`
+の内か外か」という1つの問いに単純化される点は変わりません)。
+`apps/` を `src/` の外に置くのは、この「lint/型検査の対象は `src/` の中」という単純な境界を
+守るためで、プレビュー/デモのエントリは配布物ではないので `src/` の中に紛れ込ませません。
+
+**この境界は「lint/型検査の対象」の話であり、「`npm publish` される `files`」の話ではありません
+(2026-08-30 追記)。** `src/` 再構成が定めた時点では両者は一致していました(`files: ["src", ...]`)。
+Wave 0 の dist 公開形移行後は、`tsc -p tsconfig.release.json` が `src/` から `dist/` へ emit し、
+`files` は `["dist", "LICENSE", "README.md"]`(公開される物)を指す一方、`oxlint`/
+`tsconfig.build.json`/`tsconfig.release.json` の対象は引き続き `src`(検査される物)を指します。
+「配布物と非配布物の境界」は今も `src/` の内か外かで単純化されたままですが、「公開される
+バイト列そのもの」は `src/` ではなく、そこから生成される `dist/` になった、という区別です。
 
 ## この文書の適用範囲
 

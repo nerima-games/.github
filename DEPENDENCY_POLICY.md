@@ -421,6 +421,30 @@ lookaroundをサポートしない)だけでなく、単純な選択構造の`re
    `no-restricted-imports` パターンが既存の import に誤って抵触していないかは、これで検証します。
    旧 `pnpm check:deps` に相当する専用コマンドはもう存在しません(§5)。
 
+## 7. バージョン pin 規則(Wave 0 追加)
+
+**下流リポジトリは、兄弟リポジトリの `package.json#dependencies` を、その兄弟の
+「現行の(publish 済みの)`package.json#version`」に対する完全一致(exact pin)で書く。**
+`^` `~` などのレンジ指定、および `workspace:*` は**この org では一度も使いません**。
+
+- `workspace:*`(pnpm workspace 内の別パッケージを指す特殊指定)を使わない理由:
+  各リポジトリが単独リポジトリとして独立に CI を回す構成(RELEASE_STANDARD.md、
+  `mc-dev-meta` が pnpm workspace として束ねるのは開発時の利便のためであり、
+  公開・依存解決の単位ではない)であり、`workspace:*` は同一 workspace 内でしか
+  解決できないため、単独リポジトリの CI では解決不能。この決定の一次情報源は
+  `mc-dev-meta` の `repoint-plan.ts` ヘッダコメントであり、`docs/versioning.md` §3 に
+  この点と矛盾する記述が残っている場合はこの節が優先する。
+- exact pin(レンジ指定をしない)を選ぶ理由: 依存先の新バージョンを取り込むタイミングは
+  「上位 Tier が実際に消費し、動作確認を終える」という人間の判断であるべきで(RELEASE_STANDARD.md
+  §4.2)、`^` によって `pnpm install` が自動で新しい minor/patch を拾ってしまうと、この
+  「取り込みと動作確認」のステップが CI の裏で無自覚に発生してしまう。
+- **実効機構は `mc-dev-meta` の `pnpm check:pins`。** 各下流リポジトリの
+  `package.json#dependencies` にある `@nerima-games/*` エントリのバージョンが、対応する
+  兄弟リポジトリの現行 `package.json#version` と一致しているか(古いまま固定されていないか、
+  レンジ指定に緩んでいないか)を機械的に検査する。§5 の `no-restricted-imports`(誰が誰に
+  依存してよいか)とはレイヤーが異なる検査であり、`check:pins` は「許可された依存を実際に
+  正しいバージョンで固定しているか」だけを見る(依存してよいかどうかの判定はしない)。
+
 ## 適用範囲外
 
 - **ディレクトリ構成・`package.json` の必須フィールド**: [PACKAGE_STANDARD.md](PACKAGE_STANDARD.md)。
