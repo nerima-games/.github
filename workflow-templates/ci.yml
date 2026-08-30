@@ -61,7 +61,7 @@ jobs:
         run: nix develop --command pnpm verify
 
       - name: Changeset status
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && !startsWith(github.head_ref, 'release/')
         run: |
           if git diff --name-only "origin/${{ github.base_ref }}...HEAD" | grep -qvE '^(docs/|\.github/)'; then
             nix develop --command pnpm exec changeset status --since="origin/${{ github.base_ref }}"
