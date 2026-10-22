@@ -1,0 +1,8 @@
+id: effect3-effect-catch-all-cause
+snapshots:
+  const result = Effect.catchAllCause(program, handler):
+    labels:
+    - source: Effect.catchAllCause
+      style: primary
+      start: 15
+      end: 35

@@ -1,0 +1,40 @@
+id: no-raw-exported-function-return-tsx
+snapshots:
+  ? |
+    export const getCount = (id: UserId): number => id.value
+  : labels:
+    - source: number
+      style: primary
+      start: 38
+      end: 44
+    - source: 'export const getCount = (id: UserId): number => id.value'
+      style: secondary
+      start: 0
+      end: 56
+    - source: '(id: UserId): number => id.value'
+      style: secondary
+      start: 24
+      end: 56
+  ? |
+    export function getName(id: UserId): string {
+      return 'name'
+    }
+  : labels:
+    - source: string
+      style: primary
+      start: 37
+      end: 43
+    - source: |-
+        export function getName(id: UserId): string {
+          return 'name'
+        }
+      style: secondary
+      start: 0
+      end: 63
+    - source: |-
+        function getName(id: UserId): string {
+          return 'name'
+        }
+      style: secondary
+      start: 7
+      end: 63

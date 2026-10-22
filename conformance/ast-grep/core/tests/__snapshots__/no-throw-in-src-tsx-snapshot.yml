@@ -1,0 +1,11 @@
+id: no-throw-in-src-tsx
+snapshots:
+  ? |
+    export function View() {
+      throw new Error('render failed')
+    }
+  : labels:
+    - source: throw new Error('render failed')
+      style: primary
+      start: 27
+      end: 59

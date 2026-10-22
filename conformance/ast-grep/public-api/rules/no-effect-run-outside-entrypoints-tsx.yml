@@ -1,0 +1,28 @@
+id: no-effect-run-outside-entrypoints-tsx
+language: Tsx
+severity: error
+message: Run Effect only from an entrypoint or a test.
+note: >-
+  Paths are relative to the consuming repository root. The patterns below
+  recognize conventional entrypoint paths; add other production entrypoints
+  to this shared allowlist before publishing an updated action revision.
+files:
+  - '**/*.tsx'
+ignores:
+  - '**/test/**'
+  - '**/tests/**'
+  - '**/__tests__/**'
+  - '**/*.test.*'
+  - '**/*.spec.*'
+  - 'src/main.*'
+  - 'src/entrypoint.*'
+  - 'src/entrypoints/**/*'
+  - 'src/browser.*'
+  - 'apps/*/main.*'
+  - 'apps/*/entrypoint.*'
+  - 'apps/*/entrypoints/**/*'
+rule:
+  pattern: Effect.$METHOD($$$ARGS)
+constraints:
+  METHOD:
+    regex: '^run'

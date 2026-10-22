@@ -1,0 +1,11 @@
+id: no-promise-in-src-tsx
+valid:
+  - |
+    export const View = () => <section />
+invalid:
+  - |
+    export type LoadResult = Promise<string>
+  - |
+    export const load = () => new Promise<string>((resolve) => resolve('ready'))
+  - |
+    export const load = () => new Promise((resolve) => resolve('ready'))

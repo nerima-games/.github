@@ -1,0 +1,11 @@
+id: no-effect-run-outside-entrypoints
+valid:
+  - |
+    const task = Effect.map(source, transform)
+  - |
+    const result = Logger.runPromise(task)
+invalid:
+  - |
+    const result = Effect.runPromise(task)
+  - |
+    const result = Effect.runSyncExit(task)

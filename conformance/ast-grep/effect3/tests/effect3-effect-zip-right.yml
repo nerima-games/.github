@@ -1,0 +1,5 @@
+id: effect3-effect-zip-right
+valid:
+  - const result = sequence(first, second)
+invalid:
+  - const result = Effect.zipRight(first, second)

@@ -1,0 +1,7 @@
+id: no-extends-error-in-src-tsx
+valid:
+  - |
+    export const View = () => <section />
+invalid:
+  - |
+    export class ValidationError extends Error {}

@@ -1,0 +1,6 @@
+id: effect3-brand-refined
+language: TypeScript
+severity: error
+message: "Deprecated Effect 3 API: Brand.refined."
+rule:
+  pattern: Brand.refined

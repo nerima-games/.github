@@ -1,0 +1,24 @@
+id: no-extends-error-in-src-ts
+snapshots:
+  ? |
+    export class ValidationError extends Error {}
+  : labels:
+    - source: extends Error
+      style: primary
+      start: 29
+      end: 42
+    - source: Error
+      style: secondary
+      start: 37
+      end: 42
+  ? |
+    export const ValidationError = class extends Error {}
+  : labels:
+    - source: extends Error
+      style: primary
+      start: 37
+      end: 50
+    - source: Error
+      style: secondary
+      start: 45
+      end: 50

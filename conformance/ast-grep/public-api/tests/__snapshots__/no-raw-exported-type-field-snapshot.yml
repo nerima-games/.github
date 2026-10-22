@@ -1,0 +1,56 @@
+id: no-raw-exported-type-field
+snapshots:
+  ? |
+    export interface User {
+      name: string
+    }
+  : labels:
+    - source: string
+      style: primary
+      start: 32
+      end: 38
+    - source: 'name: string'
+      style: secondary
+      start: 26
+      end: 38
+    - source: |-
+        export interface User {
+          name: string
+        }
+      style: secondary
+      start: 0
+      end: 40
+    - source: |-
+        interface User {
+          name: string
+        }
+      style: secondary
+      start: 7
+      end: 40
+  ? |
+    export type User = {
+      id: number
+    }
+  : labels:
+    - source: number
+      style: primary
+      start: 27
+      end: 33
+    - source: 'id: number'
+      style: secondary
+      start: 23
+      end: 33
+    - source: |-
+        export type User = {
+          id: number
+        }
+      style: secondary
+      start: 0
+      end: 35
+    - source: |-
+        type User = {
+          id: number
+        }
+      style: secondary
+      start: 7
+      end: 35

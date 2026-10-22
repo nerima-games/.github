@@ -1,0 +1,9 @@
+id: no-try-in-src-tsx
+valid:
+  - |
+    export const View = () => <section />
+invalid:
+  - |
+    export function View() {
+      try { return <section /> } catch { return null }
+    }

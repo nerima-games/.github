@@ -1,0 +1,8 @@
+id: effect3-context-generic-tag-tsx
+snapshots:
+  const view = <Widget service={Context.GenericTag<Service>("Service")} />:
+    labels:
+    - source: Context.GenericTag
+      style: primary
+      start: 30
+      end: 48

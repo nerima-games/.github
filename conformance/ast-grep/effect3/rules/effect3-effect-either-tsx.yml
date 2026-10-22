@@ -1,0 +1,6 @@
+id: effect3-effect-either-tsx
+language: Tsx
+severity: error
+message: "Deprecated Effect 3 API: Effect.either."
+rule:
+  pattern: Effect.either

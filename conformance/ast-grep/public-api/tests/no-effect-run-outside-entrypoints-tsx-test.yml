@@ -1,0 +1,12 @@
+id: no-effect-run-outside-entrypoints-tsx
+valid:
+  - |
+    export const view = <span />
+    const task = Effect.map(source, transform)
+invalid:
+  - |
+    export const view = <span />
+    const result = Effect.runPromise(task)
+  - |
+    export const view = <span />
+    const result = Effect.runSyncExit(task)

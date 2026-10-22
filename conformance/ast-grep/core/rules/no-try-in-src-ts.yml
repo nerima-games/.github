@@ -1,0 +1,10 @@
+id: no-try-in-src-ts
+language: TypeScript
+severity: error
+files:
+  - src/**/*.ts
+  - src/**/*.mts
+  - src/**/*.cts
+message: Do not use try statements in shipping source.
+rule:
+  kind: try_statement

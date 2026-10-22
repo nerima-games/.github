@@ -1,0 +1,8 @@
+id: effect3-context-tag-tsx
+snapshots:
+  const view = <Widget service={Context.Tag("Service")} />:
+    labels:
+    - source: Context.Tag
+      style: primary
+      start: 30
+      end: 41

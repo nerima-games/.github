@@ -1,0 +1,6 @@
+id: effect3-effect-zip-right-tsx
+language: Tsx
+severity: error
+message: "Deprecated Effect 3 API: Effect.zipRight."
+rule:
+  pattern: Effect.zipRight

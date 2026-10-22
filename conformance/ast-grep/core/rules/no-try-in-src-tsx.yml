@@ -1,0 +1,8 @@
+id: no-try-in-src-tsx
+language: Tsx
+severity: error
+files:
+  - src/**/*.tsx
+message: Do not use try statements in shipping source.
+rule:
+  kind: try_statement

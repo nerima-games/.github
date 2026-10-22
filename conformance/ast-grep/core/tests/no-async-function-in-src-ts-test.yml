@@ -1,0 +1,11 @@
+id: no-async-function-in-src-ts
+valid:
+  - |
+    export function load(): string { return 'ready' }
+invalid:
+  - |
+    export async function load(): Promise<string> { return 'ready' }
+  - |
+    export const load = async (): Promise<string> => 'ready'
+  - |
+    export class Loader { async load(): Promise<string> { return 'ready' } }

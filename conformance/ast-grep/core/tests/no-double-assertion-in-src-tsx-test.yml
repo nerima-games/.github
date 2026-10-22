@@ -1,0 +1,7 @@
+id: no-double-assertion-in-src-tsx
+valid:
+  - |
+    export const View = (props: { label: string }) => <span>{props.label as string}</span>
+invalid:
+  - |
+    export const View = (props: { label: unknown }) => <span>{props.label as unknown as string}</span>

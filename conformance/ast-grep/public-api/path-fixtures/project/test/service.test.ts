@@ -1,0 +1,1 @@
+Effect.runSync(program)

@@ -1,0 +1,38 @@
+id: no-promise-in-src-ts
+snapshots:
+  ? |
+    export const load = () => new Promise((resolve) => resolve('ready'))
+  : labels:
+    - source: new Promise((resolve) => resolve('ready'))
+      style: primary
+      start: 26
+      end: 68
+  ? |
+    export const load = () => new Promise<string>((resolve) => resolve('ready'))
+  : labels:
+    - source: new Promise<string>((resolve) => resolve('ready'))
+      style: primary
+      start: 26
+      end: 76
+  ? |
+    export const load = (): Promise<string> => fetch('/data')
+  : labels:
+    - source: Promise<string>
+      style: primary
+      start: 24
+      end: 39
+    - source: Promise
+      style: secondary
+      start: 24
+      end: 31
+  ? |
+    export type LoadResult = Promise<string>
+  : labels:
+    - source: Promise<string>
+      style: primary
+      start: 25
+      end: 40
+    - source: Promise
+      style: secondary
+      start: 25
+      end: 32

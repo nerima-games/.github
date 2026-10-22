@@ -1,0 +1,7 @@
+id: no-double-assertion-in-src-ts
+valid:
+  - |
+    export const value = input as string
+invalid:
+  - |
+    export const value = input as unknown as string

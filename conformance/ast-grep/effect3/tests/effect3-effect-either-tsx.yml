@@ -1,0 +1,5 @@
+id: effect3-effect-either-tsx
+valid:
+  - 'const view = <Widget result={transform(program)} />'
+invalid:
+  - 'const view = <Widget result={Effect.either(program)} />'

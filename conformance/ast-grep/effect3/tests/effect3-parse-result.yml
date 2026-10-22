@@ -1,0 +1,5 @@
+id: effect3-parse-result
+valid:
+  - 'type ParseIssue = { path: readonly string[] }'
+invalid:
+  - import type { ParseResult } from "effect/ParseResult"

@@ -1,0 +1,48 @@
+id: no-raw-exported-type-field
+language: TypeScript
+severity: error
+message: Use a branded type for exported type fields instead of raw number or string.
+note: >-
+  Only property type annotations within directly exported interfaces and object
+  type aliases are matched. Re-exports are not resolved. Only literal `number`
+  and `string` annotations are matched; replacement types are not checked for
+  a brand.
+files:
+  - '**/src/**/*.ts'
+  - '**/src/**/*.mts'
+  - '**/src/**/*.cts'
+utils:
+  exported-type:
+    any:
+      - all:
+          - kind: interface_declaration
+          - inside:
+              kind: export_statement
+              field: declaration
+              stopBy:
+                any:
+                  - kind: interface_declaration
+                  - kind: type_alias_declaration
+      - all:
+          - kind: type_alias_declaration
+          - inside:
+              kind: export_statement
+              field: declaration
+              stopBy:
+                any:
+                  - kind: interface_declaration
+                  - kind: type_alias_declaration
+rule:
+  all:
+    - kind: predefined_type
+    - regex: '^(number|string)$'
+    - inside:
+        kind: property_signature
+        field: type
+        stopBy: end
+    - inside:
+        matches: exported-type
+        stopBy:
+          any:
+            - kind: interface_declaration
+            - kind: type_alias_declaration

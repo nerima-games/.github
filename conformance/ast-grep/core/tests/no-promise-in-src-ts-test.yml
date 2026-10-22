@@ -1,0 +1,13 @@
+id: no-promise-in-src-ts
+valid:
+  - |
+    export function load(): string { return 'ready' }
+invalid:
+  - |
+    export type LoadResult = Promise<string>
+  - |
+    export const load = (): Promise<string> => fetch('/data')
+  - |
+    export const load = () => new Promise<string>((resolve) => resolve('ready'))
+  - |
+    export const load = () => new Promise((resolve) => resolve('ready'))

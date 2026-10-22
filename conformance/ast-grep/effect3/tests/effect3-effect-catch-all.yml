@@ -1,0 +1,5 @@
+id: effect3-effect-catch-all
+valid:
+  - const result = recover(program)
+invalid:
+  - const result = Effect.catchAll(program, handler)

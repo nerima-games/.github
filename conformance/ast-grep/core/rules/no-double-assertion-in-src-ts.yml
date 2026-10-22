@@ -1,0 +1,10 @@
+id: no-double-assertion-in-src-ts
+language: TypeScript
+severity: error
+files:
+  - src/**/*.ts
+  - src/**/*.mts
+  - src/**/*.cts
+message: Do not cast through unknown in shipping source.
+rule:
+  pattern: $VALUE as unknown as $TYPE

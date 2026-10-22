@@ -1,0 +1,5 @@
+id: effect3-schema-filter
+valid:
+  - const schema = Schema.String
+invalid:
+  - const schema = Schema.filter(predicate)

@@ -1,0 +1,5 @@
+id: effect3-effect-catch-all-tsx
+valid:
+  - 'const view = <Widget result={recover(program)} />'
+invalid:
+  - 'const view = <Widget result={Effect.catchAll(program, handler)} />'

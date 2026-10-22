@@ -1,0 +1,6 @@
+id: effect3-parse-result
+language: TypeScript
+severity: error
+message: "Do not use the deprecated Effect 3 ParseResult API."
+rule:
+  pattern: ParseResult

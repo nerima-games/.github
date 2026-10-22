@@ -1,0 +1,48 @@
+id: no-raw-exported-function-parameter-tsx
+snapshots:
+  ? |
+    export const getName = (id: number): JSX.Element => <span>{id}</span>
+  : labels:
+    - source: number
+      style: primary
+      start: 28
+      end: 34
+    - source: 'id: number'
+      style: secondary
+      start: 24
+      end: 34
+    - source: 'export const getName = (id: number): JSX.Element => <span>{id}</span>'
+      style: secondary
+      start: 0
+      end: 69
+    - source: '(id: number): JSX.Element => <span>{id}</span>'
+      style: secondary
+      start: 23
+      end: 69
+  ? |
+    export function getName(id: string): JSX.Element {
+      return <span>{id}</span>
+    }
+  : labels:
+    - source: string
+      style: primary
+      start: 28
+      end: 34
+    - source: 'id: string'
+      style: secondary
+      start: 24
+      end: 34
+    - source: |-
+        export function getName(id: string): JSX.Element {
+          return <span>{id}</span>
+        }
+      style: secondary
+      start: 0
+      end: 79
+    - source: |-
+        function getName(id: string): JSX.Element {
+          return <span>{id}</span>
+        }
+      style: secondary
+      start: 7
+      end: 79

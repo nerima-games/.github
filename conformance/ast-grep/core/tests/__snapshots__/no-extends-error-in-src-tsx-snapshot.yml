@@ -1,0 +1,13 @@
+id: no-extends-error-in-src-tsx
+snapshots:
+  ? |
+    export class ValidationError extends Error {}
+  : labels:
+    - source: extends Error
+      style: primary
+      start: 29
+      end: 42
+    - source: Error
+      style: secondary
+      start: 37
+      end: 42

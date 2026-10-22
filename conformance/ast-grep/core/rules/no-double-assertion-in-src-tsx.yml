@@ -1,0 +1,8 @@
+id: no-double-assertion-in-src-tsx
+language: Tsx
+severity: error
+files:
+  - src/**/*.tsx
+message: Do not cast through unknown in shipping source.
+rule:
+  pattern: $VALUE as unknown as $TYPE

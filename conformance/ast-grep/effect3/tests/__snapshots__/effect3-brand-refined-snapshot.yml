@@ -1,0 +1,8 @@
+id: effect3-brand-refined
+snapshots:
+  const UserId = Brand.refined<number>():
+    labels:
+    - source: Brand.refined
+      style: primary
+      start: 15
+      end: 28

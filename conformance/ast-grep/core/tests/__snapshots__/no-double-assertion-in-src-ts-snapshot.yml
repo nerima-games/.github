@@ -1,0 +1,9 @@
+id: no-double-assertion-in-src-ts
+snapshots:
+  ? |
+    export const value = input as unknown as string
+  : labels:
+    - source: input as unknown as string
+      style: primary
+      start: 21
+      end: 47

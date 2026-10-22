@@ -1,0 +1,8 @@
+id: effect3-effect-either
+snapshots:
+  const result = Effect.either(program):
+    labels:
+    - source: Effect.either
+      style: primary
+      start: 15
+      end: 28

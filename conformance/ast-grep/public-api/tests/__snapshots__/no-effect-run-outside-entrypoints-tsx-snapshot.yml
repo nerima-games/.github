@@ -1,0 +1,18 @@
+id: no-effect-run-outside-entrypoints-tsx
+snapshots:
+  ? |
+    export const view = <span />
+    const result = Effect.runPromise(task)
+  : labels:
+    - source: Effect.runPromise(task)
+      style: primary
+      start: 44
+      end: 67
+  ? |
+    export const view = <span />
+    const result = Effect.runSyncExit(task)
+  : labels:
+    - source: Effect.runSyncExit(task)
+      style: primary
+      start: 44
+      end: 68

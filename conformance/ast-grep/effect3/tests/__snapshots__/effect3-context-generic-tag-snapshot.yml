@@ -1,0 +1,8 @@
+id: effect3-context-generic-tag
+snapshots:
+  const tag = Context.GenericTag<Service>("Service"):
+    labels:
+    - source: Context.GenericTag
+      style: primary
+      start: 12
+      end: 30

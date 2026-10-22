@@ -1,0 +1,5 @@
+id: effect3-schema-decode-unknown
+valid:
+  - const schema = Schema.String
+invalid:
+  - const decode = Schema.decodeUnknown(schema)

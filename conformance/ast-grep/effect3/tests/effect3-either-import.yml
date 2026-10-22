@@ -1,0 +1,7 @@
+id: effect3-either-import
+valid:
+  - import * as Schema from "effect/Schema"
+  - import { Either } from "./Either"
+invalid:
+  - import * as Either from "effect/Either"
+  - import { Either as EffectEither } from "effect"

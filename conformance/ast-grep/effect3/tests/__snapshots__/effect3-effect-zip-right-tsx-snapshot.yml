@@ -1,0 +1,8 @@
+id: effect3-effect-zip-right-tsx
+snapshots:
+  const view = <Widget result={Effect.zipRight(first, second)} />:
+    labels:
+    - source: Effect.zipRight
+      style: primary
+      start: 29
+      end: 44

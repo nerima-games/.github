@@ -1,0 +1,13 @@
+name: Check org ast-grep conformance
+description: Test and scan the repository with the nerima-games shared ast-grep rules.
+
+runs:
+  using: composite
+  steps:
+    - name: Test shared rules and scan the repository
+      shell: bash
+      run: |
+        nix develop --command bash -euo pipefail -c '
+          ast-grep test --config "$GITHUB_ACTION_PATH/sgconfig.yml"
+          bash "$GITHUB_ACTION_PATH/scan.sh" "$GITHUB_WORKSPACE"
+        '

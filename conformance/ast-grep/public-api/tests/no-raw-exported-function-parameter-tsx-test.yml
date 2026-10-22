@@ -1,0 +1,15 @@
+id: no-raw-exported-function-parameter-tsx
+valid:
+  - |
+    export function getName(id: UserId): JSX.Element {
+      return <span>{id}</span>
+    }
+  - |
+    export const getName = (id: UserId): JSX.Element => <span>{id}</span>
+invalid:
+  - |
+    export function getName(id: string): JSX.Element {
+      return <span>{id}</span>
+    }
+  - |
+    export const getName = (id: number): JSX.Element => <span>{id}</span>

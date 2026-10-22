@@ -1,0 +1,5 @@
+id: effect3-effect-zip-right-tsx
+valid:
+  - 'const view = <Widget result={sequence(first, second)} />'
+invalid:
+  - 'const view = <Widget result={Effect.zipRight(first, second)} />'

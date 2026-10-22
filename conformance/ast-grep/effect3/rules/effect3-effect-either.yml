@@ -1,0 +1,6 @@
+id: effect3-effect-either
+language: TypeScript
+severity: error
+message: "Deprecated Effect 3 API: Effect.either."
+rule:
+  pattern: Effect.either

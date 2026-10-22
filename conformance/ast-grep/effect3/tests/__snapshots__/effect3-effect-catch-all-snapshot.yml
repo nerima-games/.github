@@ -1,0 +1,8 @@
+id: effect3-effect-catch-all
+snapshots:
+  const result = Effect.catchAll(program, handler):
+    labels:
+    - source: Effect.catchAll
+      style: primary
+      start: 15
+      end: 30

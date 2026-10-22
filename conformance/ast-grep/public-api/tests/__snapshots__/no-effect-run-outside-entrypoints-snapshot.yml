@@ -1,0 +1,16 @@
+id: no-effect-run-outside-entrypoints
+snapshots:
+  ? |
+    const result = Effect.runPromise(task)
+  : labels:
+    - source: Effect.runPromise(task)
+      style: primary
+      start: 15
+      end: 38
+  ? |
+    const result = Effect.runSyncExit(task)
+  : labels:
+    - source: Effect.runSyncExit(task)
+      style: primary
+      start: 15
+      end: 39

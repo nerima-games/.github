@@ -1,0 +1,8 @@
+id: effect3-parse-result-tsx
+snapshots:
+  import type { ParseResult } from "effect/ParseResult"; const view = <Widget issue={ParseResult} />:
+    labels:
+    - source: ParseResult
+      style: primary
+      start: 14
+      end: 25

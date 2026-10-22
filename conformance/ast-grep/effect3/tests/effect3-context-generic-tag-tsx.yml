@@ -1,0 +1,5 @@
+id: effect3-context-generic-tag-tsx
+valid:
+  - 'const view = <Widget service={Symbol.for("Service")} />'
+invalid:
+  - 'const view = <Widget service={Context.GenericTag<Service>("Service")} />'

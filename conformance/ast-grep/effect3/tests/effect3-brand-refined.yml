@@ -1,0 +1,5 @@
+id: effect3-brand-refined
+valid:
+  - type UserId = number
+invalid:
+  - const UserId = Brand.refined<number>()

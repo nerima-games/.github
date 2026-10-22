@@ -1,0 +1,20 @@
+id: no-async-function-in-src-tsx
+language: Tsx
+severity: error
+files:
+  - src/**/*.tsx
+message: Do not declare async functions in shipping source.
+rule:
+  any:
+    - all:
+        - kind: function_declaration
+        - regex: '^\s*async\b'
+    - all:
+        - kind: function_expression
+        - regex: '^\s*async\b'
+    - all:
+        - kind: arrow_function
+        - regex: '^\s*async\b'
+    - all:
+        - kind: method_definition
+        - regex: '^\s*async\b'

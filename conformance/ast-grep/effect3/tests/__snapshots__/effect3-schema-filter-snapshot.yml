@@ -1,0 +1,8 @@
+id: effect3-schema-filter
+snapshots:
+  const schema = Schema.filter(predicate):
+    labels:
+    - source: Schema.filter
+      style: primary
+      start: 15
+      end: 28

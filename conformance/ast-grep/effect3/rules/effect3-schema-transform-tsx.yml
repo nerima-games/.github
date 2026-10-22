@@ -1,0 +1,11 @@
+id: effect3-schema-transform-tsx
+language: Tsx
+severity: error
+message: "Do not use deprecated Effect 3 Schema.transform APIs."
+rule:
+  pattern: $SCHEMA.$METHOD
+constraints:
+  SCHEMA:
+    pattern: Schema
+  METHOD:
+    regex: ^transform

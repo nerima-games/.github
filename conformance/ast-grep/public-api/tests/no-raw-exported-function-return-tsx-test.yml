@@ -1,0 +1,13 @@
+id: no-raw-exported-function-return-tsx
+valid:
+  - |
+    export function getView(id: UserId): JSX.Element {
+      return <span>{id}</span>
+    }
+invalid:
+  - |
+    export function getName(id: UserId): string {
+      return 'name'
+    }
+  - |
+    export const getCount = (id: UserId): number => id.value

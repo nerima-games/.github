@@ -1,0 +1,9 @@
+id: no-throw-in-src-tsx
+valid:
+  - |
+    export const View = () => <section />
+invalid:
+  - |
+    export function View() {
+      throw new Error('render failed')
+    }

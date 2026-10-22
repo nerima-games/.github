@@ -1,0 +1,8 @@
+id: effect3-schema-transform
+snapshots:
+  const schema = Schema.transformOrFail(source, target):
+    labels:
+    - source: Schema.transformOrFail
+      style: primary
+      start: 15
+      end: 37

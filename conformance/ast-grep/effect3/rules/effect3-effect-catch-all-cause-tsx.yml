@@ -1,0 +1,6 @@
+id: effect3-effect-catch-all-cause-tsx
+language: Tsx
+severity: error
+message: "Deprecated Effect 3 API: Effect.catchAllCause."
+rule:
+  pattern: Effect.catchAllCause

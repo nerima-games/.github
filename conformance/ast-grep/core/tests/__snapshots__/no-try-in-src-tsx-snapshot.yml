@@ -1,0 +1,11 @@
+id: no-try-in-src-tsx
+snapshots:
+  ? |
+    export function View() {
+      try { return <section /> } catch { return null }
+    }
+  : labels:
+    - source: try { return <section /> } catch { return null }
+      style: primary
+      start: 27
+      end: 75

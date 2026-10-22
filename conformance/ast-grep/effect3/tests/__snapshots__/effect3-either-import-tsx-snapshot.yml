@@ -1,0 +1,30 @@
+id: effect3-either-import-tsx
+snapshots:
+  import * as Either from "effect/Either"; const view = <Widget result={Either.right(1)} />:
+    labels:
+    - source: import * as Either from "effect/Either";
+      style: primary
+      start: 0
+      end: 40
+    - source: '"effect/Either"'
+      style: secondary
+      start: 24
+      end: 39
+  import { Either as EffectEither } from "effect"; const view = <Widget result={EffectEither.left(1)} />:
+    labels:
+    - source: import { Either as EffectEither } from "effect";
+      style: primary
+      start: 0
+      end: 48
+    - source: '"effect"'
+      style: secondary
+      start: 39
+      end: 47
+    - source: Either
+      style: secondary
+      start: 9
+      end: 15
+    - source: Either as EffectEither
+      style: secondary
+      start: 9
+      end: 31

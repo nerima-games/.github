@@ -1,0 +1,5 @@
+id: effect3-parse-result-tsx
+valid:
+  - 'type ParseIssue = { path: readonly string[] }; const view = <Widget issue={issue} />'
+invalid:
+  - 'import type { ParseResult } from "effect/ParseResult"; const view = <Widget issue={ParseResult} />'

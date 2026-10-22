@@ -1,0 +1,8 @@
+id: effect3-effect-catch-all-cause-tsx
+snapshots:
+  const view = <Widget result={Effect.catchAllCause(program, handler)} />:
+    labels:
+    - source: Effect.catchAllCause
+      style: primary
+      start: 29
+      end: 49

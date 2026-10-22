@@ -1,0 +1,9 @@
+id: no-extends-error-in-src-ts
+valid:
+  - |
+    export class ValidationIssue { constructor(readonly message: string) {} }
+invalid:
+  - |
+    export class ValidationError extends Error {}
+  - |
+    export const ValidationError = class extends Error {}

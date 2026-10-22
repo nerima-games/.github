@@ -1,0 +1,14 @@
+id: no-extends-error-in-src-ts
+language: TypeScript
+severity: error
+files:
+  - src/**/*.ts
+  - src/**/*.mts
+  - src/**/*.cts
+message: Do not subclass Error in shipping source.
+rule:
+  all:
+    - kind: extends_clause
+    - has:
+        kind: identifier
+        regex: '^Error$'

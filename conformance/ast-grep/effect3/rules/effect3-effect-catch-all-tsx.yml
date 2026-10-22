@@ -1,0 +1,6 @@
+id: effect3-effect-catch-all-tsx
+language: Tsx
+severity: error
+message: "Deprecated Effect 3 API: Effect.catchAll."
+rule:
+  pattern: Effect.catchAll

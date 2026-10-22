@@ -1,0 +1,8 @@
+id: effect3-effect-zip-right
+snapshots:
+  const result = Effect.zipRight(first, second):
+    labels:
+    - source: Effect.zipRight
+      style: primary
+      start: 15
+      end: 30

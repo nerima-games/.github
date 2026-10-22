@@ -1,0 +1,8 @@
+id: effect3-schema-filter-tsx
+snapshots:
+  const view = <Widget schema={Schema.filter(predicate)} />:
+    labels:
+    - source: Schema.filter
+      style: primary
+      start: 29
+      end: 42

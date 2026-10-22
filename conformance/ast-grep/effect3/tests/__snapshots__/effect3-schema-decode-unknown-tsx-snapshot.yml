@@ -1,0 +1,8 @@
+id: effect3-schema-decode-unknown-tsx
+snapshots:
+  const view = <Widget schema={Schema.decodeUnknown(schema)} />:
+    labels:
+    - source: Schema.decodeUnknown
+      style: primary
+      start: 29
+      end: 49

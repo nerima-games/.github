@@ -1,0 +1,30 @@
+id: no-raw-exported-type-field
+valid:
+  - |
+    export interface User {
+      id: UserId
+      name: UserName
+    }
+  - |
+    export type User = {
+      id: UserId
+      name: UserName
+    }
+  - |
+    interface InternalUser {
+      name: string
+    }
+  - |
+    export interface User {
+      id: UserId
+      format: (value: UserName) => UserName
+    }
+invalid:
+  - |
+    export interface User {
+      name: string
+    }
+  - |
+    export type User = {
+      id: number
+    }

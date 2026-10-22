@@ -1,0 +1,11 @@
+id: no-try-in-src-ts
+snapshots:
+  ? |
+    export function parse(input: string): string | undefined {
+      try { return input || undefined } catch { return undefined }
+    }
+  : labels:
+    - source: try { return input || undefined } catch { return undefined }
+      style: primary
+      start: 61
+      end: 121

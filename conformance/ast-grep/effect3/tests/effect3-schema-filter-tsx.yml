@@ -1,0 +1,5 @@
+id: effect3-schema-filter-tsx
+valid:
+  - 'const view = <Widget schema={Schema.String} />'
+invalid:
+  - 'const view = <Widget schema={Schema.filter(predicate)} />'

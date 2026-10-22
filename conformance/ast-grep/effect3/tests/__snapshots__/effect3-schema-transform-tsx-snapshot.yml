@@ -1,0 +1,8 @@
+id: effect3-schema-transform-tsx
+snapshots:
+  const view = <Widget schema={Schema.transformOrFail(source, target)} />:
+    labels:
+    - source: Schema.transformOrFail
+      style: primary
+      start: 29
+      end: 51

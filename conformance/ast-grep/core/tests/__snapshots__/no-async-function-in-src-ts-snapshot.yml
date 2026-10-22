@@ -1,0 +1,23 @@
+id: no-async-function-in-src-ts
+snapshots:
+  ? |
+    export async function load(): Promise<string> { return 'ready' }
+  : labels:
+    - source: 'async function load(): Promise<string> { return ''ready'' }'
+      style: primary
+      start: 7
+      end: 64
+  ? |
+    export class Loader { async load(): Promise<string> { return 'ready' } }
+  : labels:
+    - source: 'async load(): Promise<string> { return ''ready'' }'
+      style: primary
+      start: 22
+      end: 70
+  ? |
+    export const load = async (): Promise<string> => 'ready'
+  : labels:
+    - source: 'async (): Promise<string> => ''ready'''
+      style: primary
+      start: 20
+      end: 56

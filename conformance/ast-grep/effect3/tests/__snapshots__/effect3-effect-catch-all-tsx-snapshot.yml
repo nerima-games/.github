@@ -1,0 +1,8 @@
+id: effect3-effect-catch-all-tsx
+snapshots:
+  const view = <Widget result={Effect.catchAll(program, handler)} />:
+    labels:
+    - source: Effect.catchAll
+      style: primary
+      start: 29
+      end: 44

@@ -1,0 +1,8 @@
+id: effect3-brand-refined-tsx
+snapshots:
+  const view = <Widget id={Brand.refined<number>()} />:
+    labels:
+    - source: Brand.refined
+      style: primary
+      start: 25
+      end: 38

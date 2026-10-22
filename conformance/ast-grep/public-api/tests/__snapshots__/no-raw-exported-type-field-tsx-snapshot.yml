@@ -1,0 +1,58 @@
+id: no-raw-exported-type-field-tsx
+snapshots:
+  ? |
+    export interface User {
+      name: string
+    }
+    const view = <span />
+  : labels:
+    - source: string
+      style: primary
+      start: 32
+      end: 38
+    - source: 'name: string'
+      style: secondary
+      start: 26
+      end: 38
+    - source: |-
+        export interface User {
+          name: string
+        }
+      style: secondary
+      start: 0
+      end: 40
+    - source: |-
+        interface User {
+          name: string
+        }
+      style: secondary
+      start: 7
+      end: 40
+  ? |
+    export type User = {
+      score: number
+    }
+    const view = <span />
+  : labels:
+    - source: number
+      style: primary
+      start: 30
+      end: 36
+    - source: 'score: number'
+      style: secondary
+      start: 23
+      end: 36
+    - source: |-
+        export type User = {
+          score: number
+        }
+      style: secondary
+      start: 0
+      end: 38
+    - source: |-
+        type User = {
+          score: number
+        }
+      style: secondary
+      start: 7
+      end: 38

@@ -1,0 +1,5 @@
+id: effect3-effect-either
+valid:
+  - const result = transform(program)
+invalid:
+  - const result = Effect.either(program)

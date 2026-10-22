@@ -1,0 +1,27 @@
+id: no-raw-exported-function-parameter
+valid:
+  - |
+    export function getName(id: UserId): UserName {
+      const localValue: string = 'internal'
+      return makeUserName(localValue)
+    }
+  - |
+    export const getName = (id: UserId): UserName => makeUserName(id)
+  - |
+    export function getName(id: UserId): UserName {
+      function localFormat(value: string): UserName {
+        return makeUserName(value)
+      }
+      return localFormat(id)
+    }
+  - |
+    function localLookup(id: string): UserName {
+      return makeUserName(id)
+    }
+invalid:
+  - |
+    export function getName(id: string): UserName {
+      return makeUserName(id)
+    }
+  - |
+    export const getName = (id: number): UserName => makeUserName(id)

@@ -1,0 +1,5 @@
+id: effect3-context-generic-tag
+valid:
+  - const tag = Symbol.for("Service")
+invalid:
+  - const tag = Context.GenericTag<Service>("Service")

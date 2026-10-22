@@ -1,0 +1,12 @@
+ruleDirs:
+  - core/rules
+  - effect3/rules
+  - public-api/rules
+# Each snapshotDir is relative to its testDir.
+testConfigs:
+  - testDir: core/tests
+    snapshotDir: __snapshots__
+  - testDir: effect3/tests
+    snapshotDir: __snapshots__
+  - testDir: public-api/tests
+    snapshotDir: __snapshots__

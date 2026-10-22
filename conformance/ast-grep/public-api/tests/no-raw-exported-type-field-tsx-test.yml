@@ -1,0 +1,19 @@
+id: no-raw-exported-type-field-tsx
+valid:
+  - |
+    export interface User {
+      id: UserId
+      view: JSX.Element
+    }
+    const view = <span />
+invalid:
+  - |
+    export interface User {
+      name: string
+    }
+    const view = <span />
+  - |
+    export type User = {
+      score: number
+    }
+    const view = <span />

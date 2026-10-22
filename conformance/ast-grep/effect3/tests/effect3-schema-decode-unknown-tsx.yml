@@ -1,0 +1,5 @@
+id: effect3-schema-decode-unknown-tsx
+valid:
+  - 'const view = <Widget schema={Schema.String} />'
+invalid:
+  - 'const view = <Widget schema={Schema.decodeUnknown(schema)} />'

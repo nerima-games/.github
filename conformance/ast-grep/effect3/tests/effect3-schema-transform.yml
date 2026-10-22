@@ -1,0 +1,5 @@
+id: effect3-schema-transform
+valid:
+  - const schema = Schema.String
+invalid:
+  - const schema = Schema.transformOrFail(source, target)

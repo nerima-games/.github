@@ -1,0 +1,7 @@
+id: effect3-either-import-tsx
+valid:
+  - 'import * as Schema from "effect/Schema"; const view = <Widget schema={Schema.String} />'
+  - 'import { Either } from "./Either"; const view = <Widget result={Either.left(1)} />'
+invalid:
+  - 'import * as Either from "effect/Either"; const view = <Widget result={Either.right(1)} />'
+  - 'import { Either as EffectEither } from "effect"; const view = <Widget result={EffectEither.left(1)} />'

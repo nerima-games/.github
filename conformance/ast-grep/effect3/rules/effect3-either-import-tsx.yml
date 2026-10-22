@@ -1,0 +1,20 @@
+id: effect3-either-import-tsx
+language: Tsx
+severity: error
+message: "Do not import the deprecated Effect 3 Either module."
+rule:
+  kind: import_statement
+  any:
+    - has:
+        field: source
+        regex: ^["']effect/Either(?:\.js)?["']$
+    - all:
+        - has:
+            field: source
+            regex: ^["']effect["']$
+        - has:
+            kind: import_specifier
+            stopBy: end
+            has:
+              field: name
+              pattern: Either

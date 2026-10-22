@@ -1,0 +1,8 @@
+id: effect3-schema-decode-unknown
+snapshots:
+  const decode = Schema.decodeUnknown(schema):
+    labels:
+    - source: Schema.decodeUnknown
+      style: primary
+      start: 15
+      end: 35

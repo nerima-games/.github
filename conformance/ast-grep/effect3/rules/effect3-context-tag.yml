@@ -1,0 +1,6 @@
+id: effect3-context-tag
+language: TypeScript
+severity: error
+message: "Deprecated Effect 3 API: Context.Tag."
+rule:
+  pattern: Context.Tag

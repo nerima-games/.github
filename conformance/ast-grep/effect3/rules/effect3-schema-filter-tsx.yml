@@ -1,0 +1,6 @@
+id: effect3-schema-filter-tsx
+language: Tsx
+severity: error
+message: "Deprecated Effect 3 API: Schema.filter."
+rule:
+  pattern: Schema.filter

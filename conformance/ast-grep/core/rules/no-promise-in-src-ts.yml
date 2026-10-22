@@ -1,0 +1,17 @@
+id: no-promise-in-src-ts
+language: TypeScript
+severity: error
+files:
+  - src/**/*.ts
+  - src/**/*.mts
+  - src/**/*.cts
+message: Do not use Promise types or construct Promises in shipping source.
+rule:
+  any:
+    - all:
+        - kind: generic_type
+        - has:
+            kind: type_identifier
+            regex: '^Promise$'
+    - pattern: new Promise($$$ARGS)
+    - pattern: new Promise<$TYPE>($$$ARGS)

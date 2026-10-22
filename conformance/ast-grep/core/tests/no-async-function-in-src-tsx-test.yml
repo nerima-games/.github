@@ -1,0 +1,9 @@
+id: no-async-function-in-src-tsx
+valid:
+  - |
+    export const View = () => <section />
+invalid:
+  - |
+    export const View = async () => <section />
+  - |
+    export async function View() { return <section /> }

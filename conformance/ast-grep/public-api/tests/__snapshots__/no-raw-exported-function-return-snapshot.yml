@@ -1,0 +1,40 @@
+id: no-raw-exported-function-return
+snapshots:
+  ? |
+    export const getName = (id: UserId): string => lookupName(id)
+  : labels:
+    - source: string
+      style: primary
+      start: 37
+      end: 43
+    - source: 'export const getName = (id: UserId): string => lookupName(id)'
+      style: secondary
+      start: 0
+      end: 61
+    - source: '(id: UserId): string => lookupName(id)'
+      style: secondary
+      start: 23
+      end: 61
+  ? |
+    export function getCount(id: UserId): number {
+      return countFor(id)
+    }
+  : labels:
+    - source: number
+      style: primary
+      start: 38
+      end: 44
+    - source: |-
+        export function getCount(id: UserId): number {
+          return countFor(id)
+        }
+      style: secondary
+      start: 0
+      end: 70
+    - source: |-
+        function getCount(id: UserId): number {
+          return countFor(id)
+        }
+      style: secondary
+      start: 7
+      end: 70

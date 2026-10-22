@@ -1,0 +1,5 @@
+id: effect3-brand-refined-tsx
+valid:
+  - 'type UserId = number; const view = <Widget id={userId} />'
+invalid:
+  - 'const view = <Widget id={Brand.refined<number>()} />'
