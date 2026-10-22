@@ -1,9 +1,9 @@
 # nerima-games/.github
 
-org 全体の既定ファイルと、16 リポジトリが従う基準を置くリポジトリです。
+org 全体の既定ファイルと、17の実行時リポジトリが従う基準を置くリポジトリです。
 
 GitHub は、ここに置いたコミュニティヘルスファイルを、それを持たない他のリポジトリの既定値として配信します。
-そのため16リポジトリへ同じファイルを複製する必要はありません。
+そのため17の実行時リポジトリへ同じファイルを複製する必要はありません。
 
 ## 何がどこにあるか
 
@@ -24,7 +24,7 @@ GitHub は、ここに置いたコミュニティヘルスファイルを、そ�
 
 | ファイル | 役割 |
 |---|---|
-| [DEPENDENCY_POLICY.md](DEPENDENCY_POLICY.md) | 4階層の依存グラフ、循環禁止、oxlintによる強制 |
+| [DEPENDENCY_POLICY.md](DEPENDENCY_POLICY.md) | 5階層の依存グラフ、循環禁止、oxlintによる強制 |
 | [RELEASE_STANDARD.md](RELEASE_STANDARD.md) | changesets導入、GitHub Packages公開、リリース波及順序 |
 | [SUPPLY_CHAIN.md](SUPPLY_CHAIN.md) | 脅威モデル、SHA固定、permissions、Dependabot |
 | [REVIEW_STANDARD.md](REVIEW_STANDARD.md) | セルフレビュー/AIエージェント委譲モデル、Issueラベル体系 |
@@ -38,6 +38,7 @@ GitHub は、ここに置いたコミュニティヘルスファイルを、そ�
 | [MIGRATION_RUNBOOK.md](MIGRATION_RUNBOOK.md) | 既存16リポジトリを基準へ寄せる作業指示書 |
 | [CONFORMANCE.md](CONFORMANCE.md) | 適合チェックリストと現状の適合率 |
 | `scripts/check-conformance.sh` | 適合を機械的に判定する |
+| `conformance/ast-grep/action.yml` | 共有 ast-grep 規則と fixture を各リポジトリの CI で実行する |
 | `workflow-templates/` | GitHubの「新しいワークフロー」画面に出るCI/リリーステンプレート |
 | `templates/` | 各リポジトリへコピーする雛形（flake.nix、README、gitignore） |
 
@@ -66,7 +67,7 @@ PRを出す前には [REVIEW_STANDARD.md](REVIEW_STANDARD.md) のセルフレビ
 ## 適合状況を確認する
 
 ```sh
-# 16リポジトリすべて
+# 既存の16リポジトリ
 ./scripts/check-conformance.sh ~/ghq/github.com/nerima-games
 
 # 1つだけ
@@ -77,7 +78,7 @@ PRを出す前には [REVIEW_STANDARD.md](REVIEW_STANDARD.md) のセルフレビ
 
 ## 依存の向き
 
-依存には4つの層がある。層の番号は下ほど小さく、依存は同じ層か下の層へのみ向く。定義と根拠は [DEPENDENCY_POLICY.md](DEPENDENCY_POLICY.md) にある。
+依存には5つの層がある。番号の大きい Tier は下位 Tier に依存できる。同じ Tier 内では [DEPENDENCY_POLICY.md](DEPENDENCY_POLICY.md) §1 に列挙されたエッジだけが許可される。定義と根拠は同文書にある。
 
 | 層 | 役割 | 所属 |
 |---|---|---|
@@ -85,7 +86,34 @@ PRを出す前には [REVIEW_STANDARD.md](REVIEW_STANDARD.md) のセルフレビ
 | Tier2 | 基盤 | `mc-worldgen` `mc-sim` `mc-render` `mc-playground-kit` |
 | Tier3 | 体験モジュール。相互依存なし | `mx-gameplay` `mx-redstone` `mx-ui` `mx-multiplayer` |
 | Tier4 | 合成 | `mc-compose` |
+| Tier5 | 実行ホスト | `mc-host-web` `mc-server` |
 | 層外 | 開発ツール | `mc-dev-meta` |
+
+## ast-grepによる適合検査を有効にする
+
+各リポジトリがCIとNix環境を管理しているため、consumer側のdevShellで走るcomposite actionを使います。
+共有規則を明示して実行するので、各リポジトリの`sgconfig.yml`と`.ast-grep/`を置き換えません。
+consumerのコミット済み`flake.lock`でnixpkgsを固定し、flakeのdevShellに`ast-grep`を含めてください。
+
+各リポジトリのCIでNixをセットアップした後、次のstepを追加します。共有actionは44個のfixtureを検査し、
+ast-grepが走査するconsumer内のTypeScript/TSXを確認します。構文規則はルート`src/`、公開API規則は
+すべての`src/`、`Effect.run*`規則はentrypointとtest以外、Effect 3規則は走査対象のTypeScript/TSXが対象です。
+非標準の本番entrypointを許可する場合は共有規則を更新し、新しいaction revisionを固定してください。
+
+```yaml
+- name: Check org conformance
+  uses: nerima-games/.github/conformance/ast-grep@94af2b2f6f260e87db75285f72f87685fd06bba3
+```
+
+例外は行単位で指定し、理由を直前のコメントに書きます。
+
+```ts
+// Conformance exception: the wire field remains unbranded until protocol v2.
+// ast-grep-ignore: no-raw-exported-function-parameter
+export function decodeLegacyField(value: string): Result {
+  return decode(value)
+}
+```
 
 ## ブランチ保護・org設定について
 
@@ -94,7 +122,7 @@ PRを出す前には [REVIEW_STANDARD.md](REVIEW_STANDARD.md) のセルフレビ
 
 ## 基準を変えたいとき
 
-該当する基準文書へのPull Requestとして提案する。基準を変えると16リポジトリに作業が波及するので、変更には移行手順を添える。
+該当する基準文書へのPull Requestとして提案する。基準を変えると17の実行時リポジトリに作業が波及するので、変更には移行手順を添える。
 `scripts/check-conformance.sh` の判定も同じPRで更新する。
 
 決定を覆すときは、[DECISIONS.md](DECISIONS.md) の該当記録を書き換えず、新しい記録を追加して古い方を置換済みにする。
