@@ -1,16 +1,17 @@
 # nerima-games 依存関係ポリシー
 
-nerima-games org 16 リポジトリ(`mc-audio` `mc-compose` `mc-dev-meta` `mc-kernel` `mc-meshing`
-`mc-noise` `mc-physics` `mc-playground-kit` `mc-render` `mc-save` `mc-sim` `mc-worldgen`
-`mx-gameplay` `mx-multiplayer` `mx-redstone` `mx-ui`)が守るべき、リポジトリ間 (`@nerima-games/*`)
-依存の許可グラフと、その実効(enforcement)機構を定めた文書です。
+nerima-games org の 17 runtime repositories(`mc-audio` `mc-compose` `mc-host-web` `mc-kernel`
+`mc-meshing` `mc-noise` `mc-physics` `mc-playground-kit` `mc-render` `mc-save` `mc-server`
+`mc-sim` `mc-worldgen` `mx-gameplay` `mx-multiplayer` `mx-redstone` `mx-ui`)と、グラフ外の
+`mc-dev-meta` が守る、リポジトリ間 (`@nerima-games/*`)依存の許可グラフと、その実効(enforcement)
+機構を定める文書です。
 
-**役割分担**: どのリポジトリがどの Tier に属するか、Tier とディレクトリ構成(`src/application/` の
-有無など)がどう(無)関係かは [PACKAGE_STANDARD.md「4層の依存アーキテクチャ」](PACKAGE_STANDARD.md#4層の依存アーキテクチャ)
-および [GLOSSARY.md「Tier1〜Tier4 と「層外」」](GLOSSARY.md#tier1tier4-と層外)が定義の正典です。
-本書はその上に立って、**エッジ単位の許可グラフ**(誰が誰に依存してよいか)、**実効機構**
-(`oxlint` の `no-restricted-imports`)、`mc-playground-kit` の devDependency-only 例外の理由、
-そして新しい依存を追加する手順を定めます。バージョン伝播の順序は
+**役割分担**: Tier1〜Tier4 の構成は `mc-compose/docs/architecture.md` が正です。Tier とディレクトリ
+構成(`src/application/` の有無など)がどう(無)関係かは [PACKAGE_STANDARD.md「4層の依存アーキテクチャ」](PACKAGE_STANDARD.md#4層の依存アーキテクチャ)
+および [GLOSSARY.md「Tier1〜Tier4 と「層外」」](GLOSSARY.md#tier1tier4-と層外)を参照してください。
+本書はその上に Tier5 の実行ホストを加え、**エッジ単位の許可グラフ**(誰が誰に依存してよいか)、**実効機構**
+(`oxlint` の `no-restricted-imports`)、`mc-playground-kit` の runtime 依存を許可する範囲と、
+それ以外の consumer を devDependency-only とする理由、そして新しい依存を追加する手順を定めます。バージョン伝播の順序は
 [RELEASE_STANDARD.md §5](RELEASE_STANDARD.md)、自己レビューのチェック項目は
 [REVIEW_STANDARD.md](REVIEW_STANDARD.md) を参照してください(重複させません)。
 
@@ -23,20 +24,20 @@ nerima-games org 16 リポジトリ(`mc-audio` `mc-compose` `mc-dev-meta` `mc-ke
 
 | 分類 | 決定 | 根拠 |
 |---|---|---|
-| 依存の向き | Tier N は Tier <N のみに依存可。同一 Tier 内の横の依存、上位 Tier への逆流、循環はすべて禁止 | `mc-worldgen/scripts/check-dependency-whitelist.ts:19-27` |
+| 依存の向き | Tier N は Tier1〜Tier N-1 に依存可。同じ Tier 内では§1に列挙されたエッジのみ許可し、上位 Tier への逆流、循環は禁止 | §1、`mc-compose/docs/architecture.md` |
 | `mc-kernel` | 全リポジトリから暗黙に import 可。どの許可リストにも書かない(書くとエラー) | 同 `:29-32`, `:670-677` |
-| `mc-playground-kit` | 他リポジトリからは `devDependencies` としてのみ参照可。`dependencies` に置くこと・出荷コードからの import は禁止 | 同 `:39-41`, `:205-215` |
+| `mc-playground-kit` | runtime 依存は `mc-compose` と Tier5 の `mc-host-web` に許可する。他の consumer は `devDependencies` のみ | `mc-compose/docs/architecture.md` §4.2、本書 §1・§3 |
 | 実効機構 | 旧 `scripts/check-dependency-whitelist.ts` + `test/` + `pnpm check:deps` を廃止し、各リポジトリ `.oxlintrc.json` の `no-restricted-imports` に一本化する。`pnpm lint` が旧 `check:deps` の役割を吸収する | 本書 §5、[PACKAGE_STANDARD.md「`scripts/check-dependency-whitelist.ts` の廃止」](PACKAGE_STANDARD.md#scriptscheck-dependency-whitelistts-の廃止) |
 | `.oxlintrc.json` の一致性 | 実効機構(oxlint)は全リポジトリ共通だが、`.oxlintrc.json` の `no-restricted-imports` の中身は Tier ごと・リポジトリごとに異なってよい。byte-identical は適合条件ではない | 本書 §5 |
 | 現状の乖離 | `mc-worldgen` `mx-redstone` `mx-ui` `mx-multiplayer` の `package.json#dependencies` は宣言された依存グラフに追いついておらず、移行対象。`mc-sim` `mc-render` `mc-playground-kit` にも追加の乖離を発見(本書 §4) | 本書 §4、`MIGRATION_RUNBOOK.md`(別途) |
 | 新規依存の提案手順 | 消費側リポジトリの PR で `.oxlintrc.json` + 本書を同時に更新し、`REVIEW_STANDARD.md` に沿って自己レビューする | 本書 §6 |
 
-## 1. 4層の依存グラフ(エッジレベル)
+## 1. 5層の依存グラフ(エッジレベル)
 
 `mc-worldgen/scripts/check-dependency-whitelist.ts:132-191` の `REPOSITORY_POLICY.dependencyGraph`
-(16リポジトリの完全なロースター。cycle 検出のために他リポジトリの行もミラーして持つ設計)から、
-実際に許可されているエッジを抜き出したものです。`mc-kernel` へのエッジはどの行にも現れません
-(ルール4、下記)。
+(全16リポジトリの完全なロースター。cycle 検出のために他リポジトリの行もミラーして持つ設計)から、
+実際に許可されているエッジを抜き出したものです。本書では Tier5 のホストエッジを追加しています。
+`mc-kernel` へのエッジはどの行にも現れません(ルール5、下記)。
 
 | リポジトリ | Tier | 許可された依存先(`@nerima-games/*`。`mc-kernel` は別枠で常に可) |
 |---|---|---|
@@ -54,7 +55,9 @@ nerima-games org 16 リポジトリ(`mc-audio` `mc-compose` `mc-dev-meta` `mc-ke
 | `mx-redstone` | 3 | `mc-sim`, `mc-worldgen` |
 | `mx-ui` | 3 | `mc-sim`, `mc-audio` |
 | `mx-multiplayer` | 3 | `mc-sim` |
-| `mc-compose` | 4 | `mc-audio`, `mc-render`, `mc-save`, `mc-sim`, `mc-worldgen`, `mx-gameplay`, `mx-redstone`, `mx-ui`, `mx-multiplayer` |
+| `mc-compose` | 4 | `mc-audio`, `mc-playground-kit`, `mc-render`, `mc-save`, `mc-sim`, `mc-worldgen`, `mx-gameplay`, `mx-redstone`, `mx-ui`, `mx-multiplayer` |
+| `mc-host-web` | 5 | Tier1〜Tier4 の全 package |
+| `mc-server` | 5 | Tier1〜Tier4 の全 package（`mc-playground-kit` は `devDependencies` のみ、§3参照） |
 | `mc-dev-meta` | 層外 | (なし。グラフの外。他リポジトリを `git clone` するだけで依存エッジは持たない) |
 
 ```mermaid
@@ -84,6 +87,11 @@ graph BT
 
   subgraph T4["Tier4 (合成)"]
     compose[mc-compose]
+  end
+
+  subgraph T5["Tier5 (実行ホスト)"]
+    hostweb[mc-host-web]
+    server[mc-server]
   end
 
   worldgen --> noise
@@ -116,22 +124,55 @@ graph BT
   compose --> redstone
   compose --> ui
   compose --> multiplayer
+  compose --> kit
+
+  hostweb --> noise
+  hostweb --> meshing
+  hostweb --> physics
+  hostweb --> save
+  hostweb --> audio
+  hostweb --> worldgen
+  hostweb --> sim
+  hostweb --> render
+  hostweb --> kit
+  hostweb --> gameplay
+  hostweb --> redstone
+  hostweb --> ui
+  hostweb --> multiplayer
+  hostweb --> compose
+
+  server --> noise
+  server --> meshing
+  server --> physics
+  server --> save
+  server --> audio
+  server --> worldgen
+  server --> sim
+  server --> render
+  server -.-> kit
+  server --> gameplay
+  server --> redstone
+  server --> ui
+  server --> multiplayer
+  server --> compose
 ```
 
-図に描いていない前提が2つあります。
+図の補足事項は次の通りです。
 
-- **`mc-kernel` は上記16ノードすべてから暗黙に import 可能**です(下記ルール4)。描くと図が
-  16本の矢印で埋まるため省略しています。
+- **`mc-kernel` は上記17 runtime repositories すべてから暗黙に import 可能**です(下記ルール5)。
+  許可依存グラフには加えず、17本の矢印が図を埋めるため省略しています。
 - **`mc-dev-meta` はこの図に存在しません。** 依存グラフの外側にある pnpm workspace の
-  開発ツール束ね役で、他15リポジトリを `git clone` して束ねるだけです
+  開発ツール束ね役で、runtime repositories を `git clone` して束ねるだけです
   (`mc-dev-meta/package.json` の `description`、および `scripts/sync-repos.ts` 系のスクリプト)。
+- **`mc-server` から `mc-playground-kit` への破線は devDependency のみを許可します。**
 
 ## 2. 依存方向の規則
 
 `mc-worldgen/scripts/check-dependency-whitelist.ts` のヘッダコメント(ルール1〜4、全16リポジトリに
-byte-for-byte 複製される設計)がそのまま本org の規則です。
+byte-for-byte 複製される設計)が元の Tier1〜Tier4 の規則です。
+Tier1〜Tier4 の構成は `mc-compose/docs/architecture.md` に従います。Tier5 のホストエッジは本書 §1 に定めます。
 
-1. **Tier N は Tier <N にのみ依存できる。** 上位 Tier への依存(逆流)は許可グラフに存在せず、
+1. **Tier N は Tier1〜Tier N-1 に依存できます。** 同一 Tier 内では§1に列挙されたエッジだけが許可され、上位 Tier への逆流は禁止です。`mc-kernel` はルール5の例外です。Tier5 の `mc-host-web` と `mc-server` は Tier1〜Tier4 の package に依存できます。`mc-playground-kit` の runtime 依存は§3に従います。
    `checkDeclaredDependencies`(同ファイル `:797-844`)が `package.json` レベルで、
    `classifyImport`(`:710-788`)が import 文レベルで機械的に弾きます。
 2. **Tier3 の4リポジトリ間には横の依存を作らない。** `mx-gameplay` `mx-redstone` `mx-ui`
@@ -146,7 +187,7 @@ byte-for-byte 複製される設計)がそのまま本org の規則です。
    エラーメッセージが明記する通り「共通の語彙を `@nerima-games/mc-kernel` に抽出する」ことです
    (同 `:621`)。
 4. **推移閉包は権利を与えない。** `A` が `B` に依存し、`B` が `C` に依存していても、`A` は `C`
-   を import してよいことにはなりません(同 `:23-27`)。16リポジトリ分割が実質1つのモノリスに
+   を import してよいことにはなりません(同 `:23-27`)。17 runtime repositories の分割が実質1つのモノリスに
    戻ることを防ぐための規則で、`findTransitivePath`(`:574-600`)が違反を「到達可能だが推移的」
    として区別して報告します。
 5. **`mc-kernel` のみ例外的に全リポジトリから暗黙に import 可能。** どのリポジトリの許可リストにも
@@ -155,7 +196,7 @@ byte-for-byte 複製される設計)がそのまま本org の規則です。
    宣言は省略できません(同 `:29-32` ルール4、「universal importability is a policy exemption,
    not a packaging exemption」)。
 
-## 3. `mc-playground-kit` の devDependency-only 例外
+## 3. `mc-playground-kit` の runtime 依存ルール
 
 **誤解しやすい点を先に区別します。** `mc-playground-kit` 自身が `mc-worldgen` / `mc-sim` /
 `mc-render` に依存すること(上表の Tier2 の行)は、ふつうの Tier2 → Tier1/Tier2 の実行時依存で、
@@ -166,17 +207,21 @@ in about a second」と説明する通り、プレビュー用ハーネスがワ
 
 **例外はその逆方向、つまり「他のリポジトリが `mc-playground-kit` に依存してよいか」です。**
 `mc-worldgen/scripts/check-dependency-whitelist.ts:39-41`(ルール6)と `:205-215`
-(`DEV_ONLY_PACKAGES`)が定める通り、`@nerima-games/mc-playground-kit` は:
+(`DEV_ONLY_PACKAGES`)は、`@nerima-games/mc-playground-kit` を他の consumer から dev-only にする理由を
+定めています。本方針では `mc-compose` と Tier5 の `mc-host-web` からの runtime 依存を許可し、
+`mc-server` を含む他の consumer は引き続き dev-only とします:
 
-- どのリポジトリの `package.json` でも `dependencies` に置いてはならず、`devDependencies` にのみ
-  置ける。
-- 出荷される `index.ts` / `domain/` / `application/` からの import は禁止で、`test/` や
-  `scripts/` からの参照のみ許される。
+- `mc-compose` と `mc-host-web` は `package.json#dependencies` に置けます。それ以外の runtime repository は
+  `dependencies` に置いてはならず、`devDependencies` にのみ置けます。
+- `mc-compose` と `mc-host-web` 以外では、出荷される `index.ts` / `domain/` / `application/` からの import は
+  禁止で、`test/` や `scripts/` からの参照のみ許されます。
 
 理由は、devDependency はランタイム上のエッジを作らず、グラフのノード間関係として存在しないためです。
-そのため `REPOSITORY_POLICY.dependencyGraph` 自体にも登場しません(コメント「`@nerima-games/mc-playground-kit` is absent from the rows of
-`mx-gameplay` and `mx-redstone` ... a devDependency creates no runtime edge, and therefore no
-graph edge」、`:126-130`)。
+`mc-compose` と `mc-host-web` は許可グラフに runtime edge を持つ例外で、`mc-server` を含む他の consumer は
+この扱いを変えません。
+devDependency-only consumer の行にはこの runtime edge はありません。既存コメントが具体的に示す通り、
+`mx-gameplay` と `mx-redstone` の行には含まれず、「a devDependency creates no runtime edge, and therefore no
+graph edge」(`:126-130`)です。`mc-compose` と `mc-host-web` の runtime edge は上記の許可例外です。
 
 **なぜこの制約が必要か。** `mc-playground-kit` は開発時のプレビュー・デモ実行専用のハーネスで、
 本番ビルドには含まれません。もし `mx-gameplay` のような Tier3 の体験モジュールが `mc-playground-kit`
@@ -204,13 +249,16 @@ game」と明記しています。
 **したがって、新しい Tier3 モジュールが「プレビュー用に速く手元で動かしたい」という理由で
 `mc-playground-kit` への依存を求める場合、それは常に `devDependencies` に限定し、
 出荷コードが実際に必要とする入力・レンダリング機能は `mc-render` から得るべきです。**
-`mc-playground-kit` への実行時依存を提案する PR は、この理由により却下されます。
+`mc-compose` と `mc-host-web` 以外の consumer からの `mc-playground-kit` runtime 依存を提案する PR は、
+この理由により却下されます。
 
 ## 4. 宣言された依存グラフ vs 観測された依存グラフ(現状の検証結果)
 
 [GLOSSARY.md「「宣言された」依存グラフ vs 「観測された」依存グラフ」](GLOSSARY.md#宣言された依存グラフ-vs-観測された依存グラフ)
 が定める区別に従い、§1 の表(宣言)と、実際に全16リポジトリの `package.json#dependencies` を
 読んで得た内容(観測)を突き合わせました。
+以下は Tier5 と `mc-playground-kit` runtime 許可の追加前に、2026-08-01 時点で調べた16リポジトリの記録です。
+`mc-host-web` と `mc-server` は含まず、`mc-compose` の行も旧グラフ上の9件を基準にしています。
 
 | リポジトリ | 宣言された許可先 | 観測された `dependencies`(`@nerima-games/*` のみ、`effect` 等は省略) | 状態 |
 |---|---|---|---|
@@ -223,7 +271,7 @@ game」と明記しています。
 | `mc-render` | `mc-meshing`, `mc-sim`, `mc-worldgen` | `mc-kernel`(universal枠), `mc-meshing`, `mc-worldgen` | **要確認**。`mc-sim` が `dependencies` に見当たらない |
 | `mc-playground-kit` | `mc-worldgen`, `mc-sim`, `mc-render` | (なし) | **要確認**。3つとも `dependencies` に見当たらない |
 | `mx-gameplay` | `mc-sim`, `mc-worldgen`, `mc-audio` | `mc-kernel`(universal枠), `mc-sim`, `mc-worldgen` | **要確認**。`mc-audio` が `dependencies` に見当たらない |
-| `mc-compose` | 上表9件 | 上表9件 + `mc-kernel`(universal枠) | 一致 |
+| `mc-compose` | 上表9件 | 上表9件 + `mc-kernel`(universal枠) | 一致(旧グラフ上) |
 | `mc-dev-meta` | (層外) | (なし) | 一致 |
 
 **`mc-worldgen` / `mx-redstone` / `mx-ui` / `mx-multiplayer` の4リポジトリ**は、このセッションで
@@ -324,6 +372,8 @@ lookaroundをサポートしない)だけでなく、単純な選択構造の`re
       "@nerima-games/mx-ui", "@nerima-games/mx-ui/**",
       "@nerima-games/mx-multiplayer", "@nerima-games/mx-multiplayer/**",
       "@nerima-games/mc-compose", "@nerima-games/mc-compose/**",
+      "@nerima-games/mc-host-web", "@nerima-games/mc-host-web/**",
+      "@nerima-games/mc-server", "@nerima-games/mc-server/**",
       "@nerima-games/mc-dev-meta", "@nerima-games/mc-dev-meta/**"
     ],
     "message": "mc-worldgen (Tier2, DEPENDENCY_POLICY.md) may depend only on mc-noise, mc-save, and mc-kernel. Propose a graph change before adding this import."
@@ -354,7 +404,9 @@ lookaroundをサポートしない)だけでなく、単純な選択構造の`re
         "@nerima-games/mc-physics", "@nerima-games/mc-physics/**",
         "@nerima-games/mc-save", "@nerima-games/mc-save/**",
         "@nerima-games/mc-playground-kit", "@nerima-games/mc-playground-kit/**",
-        "@nerima-games/mc-compose", "@nerima-games/mc-compose/**"
+        "@nerima-games/mc-compose", "@nerima-games/mc-compose/**",
+        "@nerima-games/mc-host-web", "@nerima-games/mc-host-web/**",
+        "@nerima-games/mc-server", "@nerima-games/mc-server/**"
       ],
       "message": "mx-ui (Tier3, DEPENDENCY_POLICY.md) may depend only on mc-sim, mc-audio, and mc-kernel."
     }
@@ -362,25 +414,51 @@ lookaroundをサポートしない)だけでなく、単純な選択構造の`re
 }]
 ```
 
-**Tier4(例: `mc-compose`。9件の許可先 + `mc-kernel`。`mc-playground-kit` は禁止、Tier1兄弟は推移的にのみ到達可能で直接importは不可)**
+**Tier4(例: `mc-compose`。10件の許可先 + `mc-kernel`。Tier1兄弟は推移的にのみ到達可能で直接importは不可)**
 
 ```jsonc
 // mc-compose/.oxlintrc.json
 "no-restricted-imports": ["warn", {
   "patterns": [
     {
-      "group": ["@nerima-games/mc-playground-kit", "@nerima-games/mc-playground-kit/**"],
-      "message": "mc-playground-kit is devDependency-only (DEPENDENCY_POLICY.md §3); it must never be imported from shipped composition code."
-    },
-    {
       "group": [
         "@nerima-games/mc-noise", "@nerima-games/mc-noise/**",
         "@nerima-games/mc-meshing", "@nerima-games/mc-meshing/**",
-        "@nerima-games/mc-physics", "@nerima-games/mc-physics/**"
+        "@nerima-games/mc-physics", "@nerima-games/mc-physics/**",
+        "@nerima-games/mc-host-web", "@nerima-games/mc-host-web/**",
+        "@nerima-games/mc-server", "@nerima-games/mc-server/**"
       ],
-      "message": "mc-compose reaches these only transitively through mc-worldgen/mc-sim/mc-render. Reaching through a dependency is not an import licence (DEPENDENCY_POLICY.md §2, no-transitive-closure)."
+      "message": "mc-compose may not depend on Tier5 peers; mc-noise/mc-meshing/mc-physics are reachable only transitively through mc-worldgen/mc-sim/mc-render (DEPENDENCY_POLICY.md §2, no-transitive-closure)."
     }
   ]
+}]
+```
+
+**Tier5(例: `mc-host-web`。Tier1〜Tier4 の全 package + `mc-kernel`。Tier5 間の横依存は禁止)**
+
+```jsonc
+// mc-host-web/.oxlintrc.json
+"no-restricted-imports": ["warn", {
+  "patterns": [{
+    "group": ["@nerima-games/mc-server", "@nerima-games/mc-server/**", "@nerima-games/mc-dev-meta", "@nerima-games/mc-dev-meta/**"],
+    "message": "mc-host-web (Tier5, DEPENDENCY_POLICY.md) may depend on Tier1–Tier4 packages but not another Tier5 package or mc-dev-meta."
+  }]
+}]
+```
+
+`mc-server` may depend on Tier1–Tier4 packages, but `mc-playground-kit` is dev-only and `mc-host-web` is a Tier5 peer.
+
+```jsonc
+// mc-server/.oxlintrc.json
+"no-restricted-imports": ["warn", {
+  "patterns": [{
+    "group": [
+      "@nerima-games/mc-host-web", "@nerima-games/mc-host-web/**",
+      "@nerima-games/mc-playground-kit", "@nerima-games/mc-playground-kit/**",
+      "@nerima-games/mc-dev-meta", "@nerima-games/mc-dev-meta/**"
+    ],
+    "message": "mc-server may depend on lower tiers, but mc-playground-kit is dev-only and Tier5 peers are forbidden."
+  }]
 }]
 ```
 
