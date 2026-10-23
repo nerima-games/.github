@@ -1,12 +1,12 @@
-# Wave 0 (2026-08-30): copied verbatim from mc-kernel's origin/main
+# Wave 0 (2026-08-30): adapted from mc-kernel's origin/main
 # .github/workflows/release.yaml (RELEASE_STANDARD.md §3) -- NOT the
 # changesets/action-driven "Version Packages" PR flow this file previously
 # held. See RELEASE_STANDARD.md §3.1 for why: publish is irreversible, and
 # only this detect/publish/tag shape re-verifies
 # (`pnpm verify && pnpm package:verify`) immediately before publishing.
-# mc-compose is the one repository that drops the `pnpm package:verify` line
-# from the `publish` job (PACKAGE_STANDARD.md "package.json の必須
-# フィールドとスクリプト" -- it has no dist/ to verify).
+# When copying this workflow for mc-compose, remove the `pnpm package:verify`
+# command from the `publish` job. It has no dist/ to verify (PACKAGE_STANDARD.md
+# "package.json の必須フィールドとスクリプト").
 name: Release
 
 on:

@@ -1,6 +1,6 @@
 {
   "name": "nerima-games release",
-  "description": "Changesets-based versioning: opens/updates a Version Packages PR from pending .changeset/*.md files, then publishes to GitHub Packages (npm.pkg.github.com) once that PR is merged.",
+  "description": "Use Changesets to prepare version and changelog updates. Publish to GitHub Packages when the version changes on main, or manually dispatch from main to publish the current version without checking whether it changed. The workflow reruns package checks before publishing.",
   "iconName": "octicon package",
   "categories": ["Node", "Publishing"],
   "filePatterns": ["^\\.changeset/config\\.json$"]
