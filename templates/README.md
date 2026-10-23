@@ -2,12 +2,9 @@
 TEMPLATE. Replace every PACKAGE with the repository name (e.g. mc-kernel),
 fill in each bracketed/placeholder paragraph, and delete this header.
 
-Section order and structure below were extracted directly from
-mc-kernel/README.md and mc-physics/README.md (read 2026-08-01). Keep the
-section order; omit a section only when it genuinely does not apply yet
-(e.g. a brand-new repository with no public API yet omits 使い方), and do not
-add new top-level sections without first checking whether an existing one
-already fits.
+Keep the section order. Omit a section only when it genuinely does not apply
+yet (e.g. a brand-new repository with no public API omits 使い方), and do not
+add new top-level sections without first checking whether one already fits.
 
 Note what real nerima-games READMEs do NOT have: neither of the two read for
 this template carries CI/license/docs badges at the top, and neither has a
@@ -64,7 +61,7 @@ versioning / design-notes。凍結された参照実装からの移植がある�
 ### セットアップ
 
 ```console
-$ direnv allow          # flake.nix の devShell で nodejs_24 + corepack が入る
+$ nix develop           # flake.nix の devShell で Node.js 26 と Corepack 24 が使える
 $ pnpm install
 ```
 
@@ -81,10 +78,7 @@ Nix を使わない場合は Node.js 24 以上と pnpm(`corepack` 推奨。`pack
 | `pnpm test` | vitest(`@effect/vitest` の `it.effect` が主 API) |
 | `pnpm test:watch` | vitest watch |
 | `pnpm test:coverage` | カバレッジ計測 |
-| `pnpm check:deps` | 依存ホワイトリスト + 循環検査 + 壁時計直読み禁止の検査 |
-| `pnpm api:check` | `api-lock.md` が実際の公開 API と食い違えば非ゼロ終了 |
-| `pnpm api:update` | `api-lock.md` を書き直す。公開面を変える PR は結果を同じ PR に含める |
-| `pnpm verify` | 上記のうち CI(workflow-templates/ci.yml)と同じ内容をまとめて実行 |
+| `pnpm verify` | CI(workflow-templates/ci.yml) の Verify step と同じ検証を実行 |
 
 ## 使い方
 

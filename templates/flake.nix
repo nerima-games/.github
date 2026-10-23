@@ -3,16 +3,12 @@
 # delete this header.
 #
 # Wave 0 (2026-08-30): this is the target shape for every repository,
-# including mc-kernel -- it is NOT a byte-for-byte copy of mc-kernel's
-# current origin/main flake.nix. Two differences from kernel's current file,
-# both intentional: oxlint and ast-grep are provided by Nix rather than npm
-# (2026-08-01 decision, PACKAGE_STANDARD.md "oxlint は package.json の
-# devDependency ではなく Nix 提供" -- kernel already has this part), and the
-# mktemp-based corepack shellHook below replaces kernel's current
-# `mkdir -p "$PWD/.corepack"` form (a `.corepack/` directory some repos were
-# committing by mistake; delete it and add it to .gitignore instead). Kernel
-# itself has not adopted the mktemp form yet -- when it does, this template
-# and kernel's flake.nix converge. This template also omits kernel's
+# including mc-kernel; it is not a byte-for-byte copy of mc-kernel's current
+# origin/main flake.nix. The devShell uses Node.js 26 and Corepack 24.
+# The mktemp-based corepack shellHook below replaces kernel's current `mkdir -p "$PWD/.corepack"`
+# form. Remove any committed `.corepack/` directory from a copied repository
+# and add it to .gitignore. Kernel itself has not adopted the mktemp form yet;
+# the files will converge if it does. This template also omits kernel's
 # `formatter = forAllSystems (... nixfmt)` output; add it back if you want
 # `nix fmt` in your repo, it is not an org-wide requirement.
 #
@@ -59,7 +55,7 @@
         {
           default = pkgs.mkShell {
             packages = [
-              pkgs.nodejs_24
+              pkgs.nodejs_26
               pkgs.corepack_24
               pkgs.typescript-language-server
               pkgs.oxlint
