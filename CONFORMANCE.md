@@ -192,11 +192,15 @@ Consumer repositories can run the shared rules through the composite action in `
     public-api-baseline: .ast-grep/public-api-baseline.json
 ```
 
-The baseline path is relative to the consumer repository. The composite action runs `nix develop` from the consumer workspace, so the consumer dev shell must provide `ast-grep` and `jq`; the shared flake template includes both. Without this input, the action requires zero findings from all three rule packs. With it, `core` and `effect3` still require zero findings, while the `public-api` rules use a ratchet: CI fails when a scan finds a violation missing from the baseline or when a baseline count is higher than the current matches. If only some duplicate matches are fixed, reduce that tuple's count. If all matches are fixed, remove the tuple. Rerun the baseline generator below to update counts and remove empty tuples, then commit the smaller file.
+The baseline path is relative to the consumer repository. The action supplies `jq` from a pinned Nixpkgs revision before entering the consumer's `nix develop`, so consumers do not need to add `jq` to their dev shell. The consumer dev shell must provide `ast-grep`; the action uses the consumer's selected version and fails if it is missing. The shared flake template includes both tools. Without this input, the action requires zero findings from all three rule packs. With it, `core` and `effect3` still require zero findings, while the `public-api` rules use a ratchet: CI fails when a scan finds a violation missing from the baseline or when a baseline count is higher than the current matches. If only some duplicate matches are fixed, reduce that tuple's count. If all matches are fixed, remove the tuple. Rerun the baseline generator below to update counts and remove empty tuples, then commit the smaller file.
+
+### Decisions
+
+The action provisions only `jq`, because it processes the scanner's JSON output. It leaves `ast-grep` in the consumer dev shell so each consumer keeps its chosen version. A consumer without `ast-grep` fails during `nix develop`; the action does not silently substitute another version.
 
 W4-R16 is the policy decision to keep every shared rule enabled while consumers record existing public API findings during migration. The shared scan on mc-render PR #48 reported 573 findings, including 536 findings where exported signatures exposed raw TypeScript types such as `string` and `number`. Converting those types in the mc-render 0.9.0 release would delay mx-ui and the next rollout wave. The published kernel, sim, and worldgen packages had not yet been scanned, so their finding counts were unknown. The ruling schedules a cross-repository cleanup wave before the next rollout wave. Every baseline must be empty before the W6 rollout; W6-6 is its final verification gate. The action enforces the per-run ratchet, while the rollout gate checks the deadline.
 
-To generate or shrink a baseline, check out the shared `.github` repository at `../.github`, then run this command from the consumer repository's Nix dev shell. The shell must provide `ast-grep` and `jq`:
+To generate or shrink a baseline, check out the shared `.github` repository at `../.github`, then run this command from the consumer repository's Nix dev shell. Since this invokes the scanner directly, that shell must provide both `ast-grep` and `jq`:
 
 ```console
 $ bash ../.github/conformance/ast-grep/scan.sh --write-baseline .ast-grep/public-api-baseline.json "$PWD"
