@@ -25,4 +25,10 @@ jobs:
         run: nix shell github:NixOS/nixpkgs/624af665418d3c65d544145b4d34ad696439570e#ast-grep --command ast-grep test --config conformance/ast-grep/sgconfig.yml
 
       - name: Test consuming repository path fixtures
-        run: nix shell github:NixOS/nixpkgs/624af665418d3c65d544145b4d34ad696439570e#ast-grep --command bash conformance/ast-grep/test-path-fixtures.sh
+        run: nix shell github:NixOS/nixpkgs/624af665418d3c65d544145b4d34ad696439570e#ast-grep github:NixOS/nixpkgs/624af665418d3c65d544145b4d34ad696439570e#jq --command bash conformance/ast-grep/test-path-fixtures.sh
+
+      - name: Test action with consumer devShell without jq
+        run: bash conformance/ast-grep/test-action-no-jq-fixture.sh
+
+      - name: Test public-api baseline fixtures
+        run: nix shell github:NixOS/nixpkgs/624af665418d3c65d544145b4d34ad696439570e#ast-grep github:NixOS/nixpkgs/624af665418d3c65d544145b4d34ad696439570e#jq --command bash conformance/ast-grep/test-baseline-fixtures.sh

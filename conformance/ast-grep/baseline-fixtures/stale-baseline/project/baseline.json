@@ -1,0 +1,8 @@
+[
+  {
+    "count": 1,
+    "file": "src/api.ts",
+    "ruleId": "no-raw-exported-function-parameter",
+    "text": "string"
+  }
+]
