@@ -112,20 +112,13 @@ git に書き込むコマンドは実行しません（読み取り専用）。
 （コメントアウトされたブロックは無効とみなします）。TEST_STANDARD.md §3 の閾値が
 2026-08-01 の 99% から 100% に引き上げられたことに伴う変更です。
 
-**名指しの例外は現在ありません。** `scripts/check-conformance.sh` の `COVERAGE_EXEMPT` は
-空リストです。以前(2026-08-01)は `mc-audio` `mc-compose` `mc-playground-kit` の3リポジトリが
-移行途中として名指しでスキップされていましたが、`mc-audio` `mc-playground-kit` は既に
-100%を達成したため例外である必要がなくなり、`mc-compose` は他の非適合リポジトリと同列の
-赤（下記「出発点」参照）として扱います。しきい値を一律に外したのではなく、実測が追いついた
-ことで例外リストが自然に空になった、という順序である点に注意してください
-（スキップの仕組み自体は `COVERAGE_EXEMPT`/`coverage_exempt_reason()` として残しており、
-将来また名指しの既知ギャップが生じた場合に再利用します）。
+**名指しの例外は現在ありません。** `scripts/check-conformance.sh` の `COVERAGE_EXEMPT` は空リストです。`mc-compose` はカバレッジのしきい値に届いていないため、例外にせず不適合として扱います。今後、名指しの例外を設ける場合は、`COVERAGE_EXEMPT` と `coverage_exempt_reason()` を使います。
 
 ## 出発点（2026-08-30 時点、Wave 0 適用前）
 
 `scripts/check-conformance.sh` を、[mc-dev-meta の P0-6 同期スナップショット](../mc-dev-meta)
 （`mc-dev-meta` 自体は同期対象に含まれておらず「not found」で報告される）に対して実際に実行した
-結果、**414項目中360項目が通過**しました（5項目は上記の名指し例外でスキップ）。
+結果、420件の判定中360件が通過し、54件が不適合、6件がスキップでした。
 Wave 0 のロールアウトはこの `.github` リポジトリの標準文書更新が最初の一歩であり、
 各リポジトリ側への適用（`package.json` の dist 化、CI への `packages: read` 追加、
 `release.yaml` の設置、カバレッジ100%化)はこの時点でまだ完了していません。
@@ -187,3 +180,24 @@ Wave 0 のロールアウトはこの `.github` リポジトリの標準文書�
 `bash scripts/check-conformance.sh <repos-dir>` を引数なしのリポジトリ一覧で実行すれば
 `mc-dev-meta` を含む16リポジトリ全部の判定を再取得できます(本書のこの表は
 `mc-dev-meta` を含まない同期スナップショットに対する実行結果です)。
+
+## Shared ast-grep conformance
+
+Consumer repositories can run the shared rules through the composite action in `nerima-games/.github`. Pin the action to a 40-character commit SHA and set `public-api-baseline` to a JSON file committed in the consumer repository:
+
+```yaml
+- name: Check shared ast-grep conformance
+  uses: nerima-games/.github/conformance/ast-grep@<40-character-commit-sha>
+  with:
+    public-api-baseline: .ast-grep/public-api-baseline.json
+```
+
+The baseline path is relative to the consumer repository. The composite action runs `nix develop` from the consumer workspace, so the consumer dev shell must provide `ast-grep` and `jq`; the shared flake template includes both. Without this input, the action requires zero findings from all three rule packs. With it, `core` and `effect3` still require zero findings, while the `public-api` rules use a ratchet: CI fails when a scan finds a violation missing from the baseline or when a baseline count is higher than the current matches. If only some duplicate matches are fixed, reduce that tuple's count. If all matches are fixed, remove the tuple. Rerun the baseline generator below to update counts and remove empty tuples, then commit the smaller file.
+
+W4-R16 is the policy decision to keep every shared rule enabled while consumers record existing public API findings during migration. The shared scan on mc-render PR #48 reported 573 findings, including 536 findings where exported signatures exposed raw TypeScript types such as `string` and `number`. Converting those types in the mc-render 0.9.0 release would delay mx-ui and the next rollout wave. The published kernel, sim, and worldgen packages had not yet been scanned, so their finding counts were unknown. The ruling schedules a cross-repository cleanup wave before the next rollout wave. Every baseline must be empty before the W6 rollout; W6-6 is its final verification gate. The action enforces the per-run ratchet, while the rollout gate checks the deadline.
+
+To generate or shrink a baseline, check out the shared `.github` repository at `../.github`, then run this command from the consumer repository's Nix dev shell. The shell must provide `ast-grep` and `jq`:
+
+```console
+$ bash ../.github/conformance/ast-grep/scan.sh --write-baseline .ast-grep/public-api-baseline.json "$PWD"
+```

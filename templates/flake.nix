@@ -60,6 +60,7 @@
               pkgs.typescript-language-server
               pkgs.oxlint
               pkgs.ast-grep
+              pkgs.jq
             ];
 
             shellHook = ''
